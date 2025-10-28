@@ -1,0 +1,25 @@
+{
+  "name": "agentic-learning-examples",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Examples for Agentic Learning SDK",
+  "scripts": {
+    "openai": "NODE_PATH=../typescript/node_modules ts-node openai_example.ts",
+    "anthropic": "NODE_PATH=../typescript/node_modules ts-node anthropic_example.ts",
+    "gemini": "NODE_PATH=../typescript/node_modules ts-node gemini_example.ts",
+    "claude": "NODE_PATH=../typescript/node_modules ts-node claude_example.ts",
+    "example:openai": "NODE_PATH=../typescript/node_modules ts-node openai_example.ts",
+    "example:anthropic": "NODE_PATH=../typescript/node_modules ts-node anthropic_example.ts",
+    "example:gemini": "NODE_PATH=../typescript/node_modules ts-node gemini_example.ts",
+    "example:claude": "NODE_PATH=../typescript/node_modules ts-node claude_example.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.67.0",
+    "@google/generative-ai": "^0.24.1"
+  }
+}

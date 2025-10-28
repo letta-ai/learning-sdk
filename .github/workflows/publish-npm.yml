@@ -1,0 +1,45 @@
+name: Publish TypeScript Package to npm
+
+on:
+  push:
+    tags:
+      - 'ts-v*.*.*'  # Trigger on TypeScript version tags like ts-v0.1.0
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: |
+        cd typescript
+        npm ci
+
+    - name: Build package
+      run: |
+        cd typescript
+        npm run build
+
+    - name: Publish to npm
+      run: |
+        cd typescript
+        npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
