@@ -106,9 +106,15 @@ describe('OpenAI Interceptor', () => {
       const messages = await learningClient.messages.list(agentName);
       expect(messages.length).toBeGreaterThan(0);
 
-      // Check if "Alice" is in the messages
+      // Check if "Alice" is in the messages (user or assistant)
       const messageContents = messages
-        .map((msg) => msg.messageType === 'reasoning_message' ? msg.reasoning : msg.messageType == 'assistant_message' && typeof msg.content === 'string' ? msg.content : '')
+        .map((msg) => {
+          if (msg.messageType === 'reasoning_message') return (msg as any).reasoning;
+          if (msg.messageType === 'assistant_message' || msg.messageType === 'user_message') {
+            return typeof (msg as any).content === 'string' ? (msg as any).content : '';
+          }
+          return '';
+        })
         .filter(Boolean);
 
       const hasAlice = messageContents.some((content) => content.includes('Alice'));

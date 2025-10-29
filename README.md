@@ -8,11 +8,12 @@ with learning(agent="my_agent"):
 ```
 
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![npm shield](https://img.shields.io/npm/v/@letta-ai/agentic-learning)](https://www.npmjs.com/package/@letta-ai/agentic-learning)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
 ## Features
 
-- **🔌 Drop-in Integration** - Works with Anthropic, Claude Agents SDK, OpenAI (Chat Completions & Responses), Gemini and Vercel AI SDK
+- **🔌 Drop-in Integration** - Works with Anthropic, Claude Agents SDK, OpenAI (Chat Completions & Responses), and Gemini
 - **💾 Persistent Memory** - Conversations automatically saved and recalled across sessions
 - **🎯 Zero Configuration** - No prompt engineering or manual context management required
 - **⚡ Streaming Support** - Full support for streaming responses
@@ -43,9 +44,9 @@ client = OpenAI()
 
 # Add memory to your agent with one line
 with learning(agent="my_assistant"):
-    # First conversation
+    # Your LLM call - conversation is automatically captured
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-5",
         messages=[{"role": "user", "content": "My name is Alice"}]
     )
 
@@ -71,7 +72,7 @@ That's it - this SDK automatically:
 | **Claude Agents SDK** | `claude-agent-sdk` | ✅ Stable | [claude_example.py](examples/claude_example.py) | [claude_example.ts](examples/claude_example.ts) |
 | **OpenAI Chat Completions** | `openai` | ✅ Stable | [openai_example.py](examples/openai_example.py) | [openai_example.ts](examples/openai_example.ts) |
 | **OpenAI Responses API** | `openai` | ✅ Stable | [openai_responses_example.py](examples/openai_responses_example.py) | [openai_responses_example.ts](examples/openai_responses_example.ts) |
-| **Google Gemini** | `google-generativeai` | ✅ Stable | [gemini_example.py](examples/gemini_example.py) | [gemini_example.ts](examples/gemini_example.ts) |
+| **Gemini** | `google-generativeai` | ✅ Stable | [gemini_example.py](examples/gemini_example.py) | [gemini_example.ts](examples/gemini_example.ts) |
 | **Vercel AI SDK** | `ai-sdk` | ✅ Experimental | | [vercel_example.ts](examples/vercel_example.ts) |
 
 See [examples/README.md](examples/README.md) for detailed documentation.

@@ -14,40 +14,81 @@ export class SleeptimeClient {
   ) {}
 
   /**
-   * Retrieve the sleeptime agent for a primary agent
+   * Retrieve the sleeptime configuration for the agent.
+   *
+   * @param agent - Name of the primary agent to retrieve corresponding sleeptime agent for
+   * @returns Sleeptime agent if found, null otherwise
    */
   async retrieve(agent: string): Promise<Agent | null> {
-    console.log('[SleeptimeClient] retrieve called for agent:', agent);
-
     const primaryAgent = await this.parent.agents.retrieve(agent);
-    console.log('[SleeptimeClient] primaryAgent:', primaryAgent ? primaryAgent.id : 'null');
-    console.log('[SleeptimeClient] primaryAgent.multiAgentGroup:', (primaryAgent as any)?.multiAgentGroup);
 
     // Note: TypeScript Letta client uses camelCase (multiAgentGroup), not snake_case
     const multiAgentGroup = (primaryAgent as any)?.multiAgentGroup;
     if (!primaryAgent || !multiAgentGroup) {
-      console.log('[SleeptimeClient] No primary agent or no multiAgentGroup, returning null');
       return null;
     }
 
     const sleeptimeAgentId = multiAgentGroup.agentIds?.[0];
-    console.log('[SleeptimeClient] sleeptimeAgentId:', sleeptimeAgentId);
 
     if (!sleeptimeAgentId) {
-      console.log('[SleeptimeClient] No sleeptimeAgentId found, returning null');
       return null;
     }
 
     try {
-      console.log('[SleeptimeClient] Retrieving sleeptime agent from Letta with ID:', sleeptimeAgentId);
       const sleeptimeAgent = await this.letta.agents.retrieve(sleeptimeAgentId, {
         includeRelationships: ['memory', 'multi_agent_group', 'tags'],
       });
-      console.log('[SleeptimeClient] Sleeptime agent retrieved:', sleeptimeAgent ? sleeptimeAgent.id : 'null');
       return sleeptimeAgent as Agent;
     } catch (error) {
-      console.error('[SleeptimeClient] Error retrieving sleeptime agent:', error);
       return null;
     }
+  }
+
+  /**
+   * Update the sleeptime configuration for the agent.
+   *
+   * @param agent - Name of the primary agent to update corresponding sleeptime agent for
+   * @param model - Model to use for the sleeptime agent
+   * @param frequency - Frequency at which to invoke the sleeptime memory agent (num turns)
+   * @returns Updated sleeptime agent if found, null otherwise
+   */
+  async update(agent: string, model?: string, frequency?: number): Promise<Agent | null> {
+    const primaryAgent = await this.parent.agents.retrieve(agent);
+    const multiAgentGroup = (primaryAgent as any)?.multiAgentGroup;
+
+    if (!primaryAgent || !multiAgentGroup) {
+      return null;
+    }
+
+    const sleeptimeAgentId = multiAgentGroup.agentIds?.[0];
+    if (!sleeptimeAgentId) {
+      return null;
+    }
+
+    let sleeptimeAgent: any = null;
+
+    // Update model if provided
+    if (model) {
+      sleeptimeAgent = await this.letta.agents.modify(sleeptimeAgentId, {
+        model,
+      });
+    }
+
+    // Update frequency if provided
+    if (frequency) {
+      await this.letta.groups.modify(multiAgentGroup.id, {
+        managerConfig: {
+          managerType: 'sleeptime' as const,
+          sleeptimeAgentFrequency: frequency,
+        },
+      });
+
+      // Re-fetch agent to get updated configuration
+      sleeptimeAgent = await this.letta.agents.retrieve(sleeptimeAgentId, {
+        includeRelationships: ['memory', 'multi_agent_group', 'tags'],
+      });
+    }
+
+    return sleeptimeAgent as Agent;
   }
 }

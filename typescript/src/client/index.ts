@@ -17,9 +17,9 @@ export interface AgenticLearningOptions {
 }
 
 /**
- * Main client for Agentic Learning SDK
+ * Synchronous client for Agentic Learning SDK.
  *
- * Provides access to agents, memory, and messages APIs.
+ * Provides simplified APIs for managing Letta agents with name-based lookups.
  */
 export class AgenticLearning {
   public readonly letta: LettaClient;
@@ -29,17 +29,25 @@ export class AgenticLearning {
   public readonly memory: MemoryClient;
   public readonly messages: MessagesClient;
 
+  /**
+   * Initialize the Agentic Learning client.
+   *
+   * @param options - Client configuration options
+   * @param options.baseUrl - Letta server base URL. Defaults to LETTA_BASE_URL env var or https://api.letta.com
+   * @param options.apiKey - Optional authentication token for Letta server. Defaults to LETTA_API_KEY env var or null
+   */
   constructor(options: AgenticLearningOptions = {}) {
     // Check for API key in environment if not provided
     const apiKey = options.apiKey || process.env.LETTA_API_KEY;
 
     // Default to cloud endpoint or use provided base URL
-    this.baseUrl = options.baseUrl || 'https://api.letta.com';
+    this.baseUrl = options.baseUrl || process.env.LETTA_BASE_URL || 'https://api.letta.com';
 
     // Create underlying Letta client
     this.letta = new LettaClient({
       baseUrl: this.baseUrl,
       token: apiKey,
+      project: 'default-project',
     });
 
     // Initialize sub-clients

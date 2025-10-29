@@ -6,6 +6,7 @@
 
 import type { AgenticLearning } from '../index';
 import type { Letta } from '@letta-ai/letta-client';
+import { MessagesContextClient } from './context';
 
 // Use the Letta SDK's message type directly
 export type Message = Letta.LettaMessageUnion;
@@ -17,10 +18,21 @@ export interface ListMessagesOptions {
 }
 
 export class MessagesClient {
-  constructor(private parent: AgenticLearning) {}
+  public readonly context: MessagesContextClient;
+
+  constructor(private parent: AgenticLearning) {
+    this.context = new MessagesContextClient(parent);
+  }
 
   /**
-   * List messages for an agent
+   * List all messages for the agent.
+   *
+   * @param agent - Name of the agent to list messages for
+   * @param options - Pagination options
+   * @param options.before - Optional message ID cursor for pagination
+   * @param options.after - Optional message ID cursor for pagination
+   * @param options.limit - Maximum number of messages to return (default: 50)
+   * @returns Paginated list of message objects
    */
   async list(agent: string, options: ListMessagesOptions = {}): Promise<Message[]> {
     // First get the agent to get its ID
@@ -40,7 +52,24 @@ export class MessagesClient {
   }
 
   /**
-   * Get a specific message by ID
+   * Create new messages for the agent.
+   *
+   * @param agentId - ID of the agent to create messages for
+   * @param requestMessages - List of message dictionaries with 'role' and 'content'
+   * @returns Response from Letta
+   */
+  async create(agentId: string, requestMessages: Array<{role: 'user' | 'assistant' | 'system'; content: string}>): Promise<any> {
+    return await this.parent.letta.agents.messages.create(agentId, {
+      messages: requestMessages as any,
+    });
+  }
+
+  /**
+   * Get a specific message by ID.
+   *
+   * @param agent - Name of the agent
+   * @param messageId - ID of the message to retrieve
+   * @returns Message object if found, null otherwise
    */
   async retrieve(agent: string, messageId: string): Promise<Message | null> {
     try {

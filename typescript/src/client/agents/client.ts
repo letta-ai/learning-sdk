@@ -11,10 +11,17 @@ export interface Agent {
   id: string;
   name: string;
   created_at?: string;
+  memory?: {
+    blocks?: {
+      label: string;
+      value: string;
+    }[];
+  }
   multi_agent_group?: {
     id: string;
     [key: string]: any;
   };
+  tags?: string[];
   [key: string]: any;
 }
 
@@ -40,7 +47,13 @@ export class AgentsClient {
   }
 
   /**
-   * Create a new agent
+   * Create a new agent.
+   *
+   * @param options - Agent creation options
+   * @param options.agent - Name for the agent (default: "letta-agent")
+   * @param options.memory - List of memory block labels to create (default: ["human"])
+   * @param options.model - Model to use for the agent (default: "anthropic/claude-sonnet-4-20250514")
+   * @returns Created agent object
    */
   async create(options: CreateAgentOptions): Promise<Agent> {
     const memory = options.memory || ['human'];
@@ -80,7 +93,30 @@ export class AgentsClient {
   }
 
   /**
-   * Retrieve an agent by name
+   * Update an agent by name.
+   *
+   * @param agent - Name of the agent to update
+   * @param model - Model to use for the agent
+   * @returns Updated agent object if found, null otherwise
+   */
+  async update(agent: string, model: string): Promise<Agent | null> {
+    const agentId = await this._retrieveId(agent);
+    if (!agentId) {
+      return null;
+    }
+
+    const updatedAgent = await this.parent.letta.agents.modify(agentId, {
+      model,
+    });
+
+    return updatedAgent as Agent;
+  }
+
+  /**
+   * Retrieve an agent by name.
+   *
+   * @param agent - Name of the agent to retrieve
+   * @returns Agent object if found, null otherwise
    */
   async retrieve(agent: string): Promise<Agent | null> {
     try {
@@ -96,17 +132,24 @@ export class AgentsClient {
   }
 
   /**
-   * Delete an agent
+   * Delete an agent by name.
+   *
+   * @param agent - Name of the agent to delete
+   * @returns True if deleted, false if not found
    */
-  async delete(agent: string): Promise<void> {
-    const agentState = await this.retrieve(agent);
-    if (agentState) {
-      await this.parent.letta.agents.delete(agentState.id);
+  async delete(agent: string): Promise<boolean> {
+    const agentId = await this._retrieveId(agent);
+    if (agentId) {
+      await this.parent.letta.agents.delete(agentId);
+      return true;
     }
+    return false;
   }
 
   /**
-   * List all agents created by this SDK
+   * List all agents created by this SDK.
+   *
+   * @returns List of agent objects
    */
   async list(): Promise<Agent[]> {
     const agents = await this.parent.letta.agents.list({
@@ -114,5 +157,24 @@ export class AgentsClient {
       includeRelationships: ['memory', 'multi_agent_group', 'tags'],
     });
     return agents as Agent[];
+  }
+
+  /**
+   * Retrieve an agent ID by name. Skips expensive joins that are
+   * unnecessary for ID fetch.
+   *
+   * @param agent - Name of the agent to retrieve
+   * @returns Agent ID if found, null otherwise
+   */
+  async _retrieveId(agent: string): Promise<string | null> {
+    try {
+      const agents = await this.parent.letta.agents.list({
+        name: agent,
+        tags: ['agentic-learning-sdk'],
+      });
+      return agents.length > 0 ? agents[0].id : null;
+    } catch (error) {
+      return null;
+    }
   }
 }

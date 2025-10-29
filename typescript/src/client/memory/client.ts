@@ -30,13 +30,20 @@ export class MemoryClient {
   }
 
   /**
-   * Create or update a memory block
+   * Create a new memory block.
+   *
+   * @param options - Memory block creation options
+   * @param options.agent - Name of the agent to create memory block for
+   * @param options.label - Label for the memory block
+   * @param options.value - Initial value for the memory block (default: placeholder string)
+   * @param options.description - Description to guide the agent on how to use this block
+   * @returns Created memory block object, or null if agent not found
    */
-  async create(options: CreateMemoryOptions): Promise<MemoryBlock> {
+  async create(options: CreateMemoryOptions): Promise<MemoryBlock | null> {
     // First get the agent to get its ID
     const agentState = await this.parent.agents.retrieve(options.agent);
     if (!agentState) {
-      throw new Error(`Agent '${options.agent}' not found`);
+      return null;
     }
 
     // Create the block
@@ -56,14 +63,61 @@ export class MemoryClient {
   }
 
   /**
-   * List memory blocks for an agent
+   * Upsert a memory block (create or update).
+   *
+   * @param options - Memory block upsert options
+   * @param options.agent - Name of the agent to upsert memory block for
+   * @param options.label - Label for the memory block
+   * @param options.value - Value for the memory block (default: placeholder string)
+   * @param options.description - Description to guide the agent on how to use this block
+   * @returns Created or updated memory block object, or null if agent not found
+   */
+  async upsert(options: CreateMemoryOptions): Promise<MemoryBlock | null> {
+    const agentState = await this.parent.agents.retrieve(options.agent);
+    if (!agentState) {
+      return null;
+    }
+
+    const blocks = (agentState as any).memory?.blocks || [];
+    const existingBlock = blocks.find((b: any) => b.label === options.label);
+
+    if (!existingBlock) {
+      return await this.create(options);
+    } else {
+      const updatedBlock = await this.parent.letta.blocks.modify(existingBlock.id, {
+        value: options.value,
+        description: options.description,
+      });
+      return updatedBlock as MemoryBlock;
+    }
+  }
+
+  /**
+   * Retrieve a memory block by label.
+   *
+   * @param agent - Name of the agent to retrieve memory block for
+   * @param label - Label of the memory block to retrieve
+   * @returns Memory block object if found, null otherwise
+   */
+  async retrieve(agent: string, label: string): Promise<MemoryBlock | null> {
+    const agentState = await this.parent.agents.retrieve(agent);
+    if (!agentState) {
+      return null;
+    }
+
+    const blocks = (agentState as any).memory?.blocks || (agentState as any).blocks || [];
+    const block = blocks.find((b: any) => b.label === label);
+    return block || null;
+  }
+
+  /**
+   * List all memory blocks for the agent.
+   *
+   * @param agent - Name of the agent to list memory blocks for
+   * @returns List of memory block objects
    */
   async list(agent: string): Promise<MemoryBlock[]> {
-    console.log('[MemoryClient.list] Retrieving blocks for agent:', agent);
     const agentState = await this.parent.agents.retrieve(agent);
-    console.log('[MemoryClient.list] agentState:', agentState ? agentState.id : 'null');
-    console.log('[MemoryClient.list] agentState.memory:', (agentState as any)?.memory);
-    console.log('[MemoryClient.list] agentState.blocks:', (agentState as any)?.blocks);
 
     if (!agentState) {
       return [];
@@ -72,25 +126,45 @@ export class MemoryClient {
     // Return memory blocks from agent state (matches Python implementation)
     // Note: TypeScript Letta client might use camelCase
     const blocks = (agentState as any).memory?.blocks || (agentState as any).blocks || [];
-    console.log('[MemoryClient.list] Returning blocks:', blocks.length);
     return blocks;
   }
 
   /**
-   * Search memory using the sleeptime agent
+   * Delete a memory block by label.
+   *
+   * @param agent - Name of the agent to delete memory block for
+   * @param label - Label of the memory block to delete
+   * @returns True if deleted, false if not found
    */
-  async search(agent: string, prompt: string): Promise<Message[]> {
-    console.log('[MemoryClient] search called for agent:', agent);
-
-    const sleeptimeAgent = await this.parent.agents.sleeptime.retrieve(agent);
-    console.log('[MemoryClient] sleeptimeAgent:', sleeptimeAgent ? sleeptimeAgent.id : 'null');
-
-    if (!sleeptimeAgent) {
-      console.log('[MemoryClient] No sleeptime agent found, returning empty array');
-      return [];
+  async delete(agent: string, label: string): Promise<boolean> {
+    const agentState = await this.parent.agents.retrieve(agent);
+    if (!agentState) {
+      return false;
     }
 
-    console.log('[MemoryClient] Calling agents.messages.create with sleeptimeAgent.id:', sleeptimeAgent.id);
+    const blocks = (agentState as any).memory?.blocks || (agentState as any).blocks || [];
+    const block = blocks.find((b: any) => b.label === label);
+    if (!block) {
+      return false;
+    }
+
+    await this.parent.letta.blocks.delete(block.id);
+    return true;
+  }
+
+  /**
+   * Query conversation using semantic search.
+   *
+   * @param agent - Name of the agent to search memory for
+   * @param prompt - The prompt to ask the agent
+   * @returns Message response from agent
+   */
+  async search(agent: string, prompt: string): Promise<Message[]> {
+    const sleeptimeAgent = await this.parent.agents.sleeptime.retrieve(agent);
+
+    if (!sleeptimeAgent) {
+      return [];
+    }
 
     try {
       const response = await this.parent.letta.agents.messages.create(sleeptimeAgent.id, {
@@ -102,14 +176,35 @@ export class MemoryClient {
         ],
       });
 
-      console.log('[MemoryClient] Response received:', response);
-      console.log('[MemoryClient] Response.messages:', response.messages?.length || 0);
-
       // Return messages directly from Letta SDK - no remapping needed
       return response.messages || [];
     } catch (error) {
-      console.error('[MemoryClient] Error calling sleeptime agent:', error);
       return [];
     }
+  }
+
+  /**
+   * Prompt agent to update memory directly.
+   *
+   * @param agent - Name of the agent
+   * @param prompt - The prompt to trigger memory update
+   * @returns Updated memory context string used for injection
+   */
+  async remember(agent: string, prompt: string): Promise<string | null> {
+    const sleeptimeAgent = await this.parent.agents.sleeptime.retrieve(agent);
+    if (!sleeptimeAgent) {
+      return null;
+    }
+
+    await this.parent.letta.agents.messages.create(sleeptimeAgent.id, {
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
+
+    return await this.context.retrieve(agent);
   }
 }

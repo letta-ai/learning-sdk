@@ -79,26 +79,23 @@ export class MemoryContextClient {
   constructor(private parent: AgenticLearning) {}
 
   /**
-   * Retrieve formatted memory context for an agent
+   * Retrieve the memory context for the agent.
+   *
+   * @param agent - Name of the agent to retrieve memory context for
+   * @returns Memory context string for prompt injection
    */
   async retrieve(agent: string): Promise<string | null> {
-    console.log('[MemoryContextClient] retrieve called for agent:', agent);
     const blocks = await this.parent.memory.list(agent);
-    console.log('[MemoryContextClient] blocks retrieved:', blocks?.length || 0);
 
     if (!blocks || blocks.length === 0) {
-      console.log('[MemoryContextClient] No blocks found, returning null');
       return null;
     }
 
     try {
       const formatted = formatMemoryBlocks(blocks as MemoryBlock[]);
-      console.log('[MemoryContextClient] Formatted context:', formatted ? formatted.substring(0, 200) + '...' : 'null');
       return formatted;
     } catch (error) {
-      console.log('[MemoryContextClient] formatMemoryBlocks failed, trying fallback. Error:', error);
       const formatted = formatMemoryBlocksFallback(blocks);
-      console.log('[MemoryContextClient] Fallback formatted context:', formatted ? formatted.substring(0, 200) + '...' : 'null');
       return formatted;
     }
   }

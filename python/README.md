@@ -2,20 +2,19 @@
 
 Add persistent memory to any LLM agent with one line of code. This Agentic Learning SDK automatically captures conversations, manages context, and enables agents to remember information across sessions.
 
-```typescript
-await withLearning({ agent: 'my_agent' }, async () => {
-    response = client.chat.completions.create(...) // Memory handled automatically
-});
+```python
+with learning(agent="my_agent"):
+    response = client.chat.completions.create(...)  # Memory handled automatically
 ```
 
-[![npm shield](https://img.shields.io/npm/v/@letta-ai/agentic-learning)](https://www.npmjs.com/package/@letta-ai/agentic-learning)
+[![PyPI Version](https://img.shields.io/pypi/v/agentic-learning.svg)](https://pypi.org/project/agentic-learning/)
 
 ## Get Started
 
 ### Installation
 
 ```bash
-npm install @letta-ai/agentic-learning
+pip install agentic-learning
 ```
 
 ### Basic Usage
@@ -26,27 +25,26 @@ export OPENAI_API_KEY="your-openai-key"
 export LETTA_API_KEY="your-letta-key"
 ```
 
-```typescript
-import OpenAI from 'openai';
-import { withLearning } from '@letta-ai/agentic-learning';
+```python
+from openai import OpenAI
+from agentic_learning import learning
 
-const openai = new OpenAI();
+client = OpenAI()
 
-// Add memory to your agent with one line
-await withLearning({ agent: 'my-agent' }, async () => {
-  // Your LLM call - conversation is automatically captured
-  const response = await openai.chat.completions.create({
-    model: 'gpt-5',
-    messages: [{ role: 'user', content: 'My name is Alice' }],
-  });
+# Add memory to your agent with one line
+with learning(agent="my-agent"):
+    # Your LLM call - conversation is automatically captured
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "My name is Alice"}]
+    )
 
-  // Agent remembers prior context
-  const response = await openai.chat.completions.create({
-    model: 'gpt-5',
-    messages: [{ role: 'user', content: 'What is my name?' }],
-  });
-  // Returns: "Your name is Alice"
-});
+    # Agent remembers prior context
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "What is my name?"}]
+    )
+    # Returns: "Your name is Alice"
 ```
 
 That's it - this SDK automatically:
@@ -59,12 +57,11 @@ That's it - this SDK automatically:
 
 | Provider | Package | Status | Example |
 |----------|---------|--------|---------|
-| **Anthropic** | `anthropic` | ✅ Stable | [anthropic_example.ts](examples/anthropic_example.ts) |
-| **Claude Agent SDK** | `claude-agent-sdk` | ✅ Stable | [claude_example.ts](examples/claude_example.ts) |
-| **OpenAI Chat Completions** | `openai` | ✅ Stable | [openai_example.ts](examples/openai_example.ts) |
-| **OpenAI Responses API** | `openai` | ✅ Stable | [openai_responses_example.ts](examples/openai_responses_example.ts) |
-| **Gemini** | `google-generativeai` | ✅ Stable | [gemini_example.ts](examples/gemini_example.ts) |
-| **Vercel AI SDK** | `ai-sdk` | ✅ Stable | [vercel_example.ts](examples/vercel_example.ts) |
+| **Anthropic** | `anthropic` | ✅ Stable | [anthropic_example.py](../examples/anthropic_example.py) |
+| **Claude Agent SDK** | `claude-agent-sdk` | ✅ Stable | [claude_example.py](../examples/claude_example.py) |
+| **OpenAI Chat Completions** | `openai` | ✅ Stable | [openai_example.py](../examples/openai_example.py) |
+| **OpenAI Responses API** | `openai` | ✅ Stable | [openai_responses_example.py](../examples/openai_responses_example.py) |
+| **Gemini** | `google-generativeai` | ✅ Stable | [gemini_example.py](../examples/gemini_example.py) |
 
 ### Examples
 
@@ -73,8 +70,8 @@ See the top-level [`../examples/`](../examples/) directory for examples:
 ```bash
 # Run from examples directory
 cd ../examples
-npm install
-npm run openai
+pip install -r requirements.txt
+python openai_example.py
 ```
 
 ## Core concepts in Letta:
@@ -91,14 +88,14 @@ Letta is built on the [MemGPT](https://arxiv.org/abs/2310.08560) research paper,
 
 Connect to a local Letta server instead of the cloud:
 
-```typescript
-const learningClient = new AgenticLearning({
-  baseUrl: "http://localhost:8283"
-});
+```python
+from agentic_learning import AgenticLearning, learning
 
-await withLearning({ agent: 'my-agent', client: learningClient }, async () => {
-    // Your LLM call - conversation is automatically captured
-});
+learning_client = AgenticLearning(base_url="http://localhost:8283")
+
+with learning(agent="my-agent", client=learning_client):
+    # Your LLM call - conversation is automatically captured
+    response = client.chat.completions.create(...)
 ```
 
 Run Letta locally with Docker:
@@ -116,17 +113,17 @@ See the [self-hosting guide](https://docs.letta.com/guides/selfhosting) for more
 ### Development
 
 ```bash
-# Install dependencies
-npm install
+# Install in development mode
+pip install -e .
 
 # Build
-npm run build
+python -m build
 
 # Run tests
-npm test
+pytest
 
-# Watch mode
-npm run dev
+# Run specific test
+pytest tests/test_openai.py
 ```
 
 ## License
