@@ -6,7 +6,9 @@
  */
 
 import { BaseAPIInterceptor } from './base';
-import type { Provider } from './base';
+import type { Provider } from '../types';
+import { getCurrentConfig } from '../core';
+import { saveConversationTurn } from './utils';
 
 export class OpenAIInterceptor extends BaseAPIInterceptor {
   readonly PROVIDER: Provider = 'openai';
@@ -105,7 +107,6 @@ export class OpenAIInterceptor extends BaseAPIInterceptor {
     params: any,
     options?: any
   ): Promise<any> {
-    const { getCurrentConfig } = require('../core');
     const config = getCurrentConfig();
 
     if (!config) {
@@ -136,7 +137,6 @@ export class OpenAIInterceptor extends BaseAPIInterceptor {
       // Non-streaming - extract and save immediately
       const modelName = this.extractModelName(response);
 
-      const { saveConversationTurn } = require('../core');
       await saveConversationTurn(
         this.PROVIDER,
         modelName,
@@ -158,7 +158,6 @@ export class OpenAIInterceptor extends BaseAPIInterceptor {
     params: any,
     options?: any
   ): Promise<any> {
-    const { getCurrentConfig } = require('../core');
     const config = getCurrentConfig();
 
     if (!config) {
@@ -183,7 +182,6 @@ export class OpenAIInterceptor extends BaseAPIInterceptor {
     // Extract and save
     const modelName = this.extractModelName(response);
 
-    const { saveConversationTurn } = require('../core');
     await saveConversationTurn(
       this.PROVIDER,
       modelName,
@@ -363,7 +361,6 @@ export class OpenAIInterceptor extends BaseAPIInterceptor {
     const response = this.buildResponseFromChunks(chunks);
 
     // Save to Letta
-    const { saveConversationTurn } = require('../core');
     saveConversationTurn(
       this.PROVIDER,
       modelName,

@@ -5,7 +5,8 @@
  */
 
 export { BaseAPIInterceptor } from './base';
-export type { Provider, IBaseInterceptor } from './base';
+export type { IBaseInterceptor } from './base';
+export type { Provider } from '../types';
 export { install, registerInterceptor, uninstallAll } from './registry';
 export { OpenAIInterceptor } from './openai';
 export { AnthropicInterceptor } from './anthropic';

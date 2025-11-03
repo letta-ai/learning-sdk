@@ -9,7 +9,7 @@ going in/out of the Claude subprocess.
 
 import asyncio
 import json
-from typing import Any, AsyncGenerator, AsyncIterator, Generator
+from typing import Any, AsyncIterator
 
 from ..core import get_current_config
 from .base import BaseInterceptor
@@ -239,7 +239,7 @@ class ClaudeInterceptor(BaseInterceptor):
             # Only save if we have at least one message
             if user_message or assistant_message:
                 # Save conversation turn (non-blocking)
-                from ..core import _save_conversation_turn
+                from .utils import _save_conversation_turn
                 try:
                     asyncio.create_task(
                         _save_conversation_turn(

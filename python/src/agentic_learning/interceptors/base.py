@@ -5,11 +5,8 @@ Abstract base class for SDK interceptors.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator, Dict, Generator, Literal, Optional
+from typing import Any, AsyncGenerator, Dict, Generator
 import functools
-
-# Provider type - expand as new providers are added
-Provider = Literal["gemini", "claude", "anthropic", "openai"]
 
 
 class BaseInterceptor(ABC):
@@ -343,7 +340,7 @@ class BaseAPIInterceptor(BaseInterceptor):
 
         response = self._build_response_from_chunks(chunks)
 
-        from ..core import _save_conversation_turn
+        from .utils import _save_conversation_turn
         try:
             _save_conversation_turn(
                 provider=self.PROVIDER,
@@ -369,7 +366,7 @@ class BaseAPIInterceptor(BaseInterceptor):
 
         response = self._build_response_from_chunks(chunks)
 
-        from ..core import _save_conversation_turn_async
+        from .utils import _save_conversation_turn_async
         try:
             await _save_conversation_turn_async(
                 provider=self.PROVIDER,
@@ -460,7 +457,7 @@ class BaseAPIInterceptor(BaseInterceptor):
                 # Non-streaming - extract and save immediately
                 model_name = interceptor.extract_model_name(response=response, model_self=self_arg)
 
-                from ..core import _save_conversation_turn
+                from .utils import _save_conversation_turn
                 try:
                     _save_conversation_turn(
                         provider=interceptor.PROVIDER,
@@ -521,7 +518,7 @@ class BaseAPIInterceptor(BaseInterceptor):
                 # Non-streaming - extract and save immediately
                 model_name = interceptor.extract_model_name(response=response, model_self=self_arg)
 
-                from ..core import _save_conversation_turn_async
+                from .utils import _save_conversation_turn_async
                 try:
                     await _save_conversation_turn_async(
                         provider=interceptor.PROVIDER,

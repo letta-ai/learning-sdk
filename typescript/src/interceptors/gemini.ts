@@ -6,7 +6,9 @@
  */
 
 import { BaseAPIInterceptor } from './base';
-import type { Provider } from './base';
+import type { Provider } from '../types';
+import { getCurrentConfig } from '../core';
+import { saveConversationTurn } from './utils';
 
 export class GeminiInterceptor extends BaseAPIInterceptor {
   readonly PROVIDER: Provider = 'gemini';
@@ -97,7 +99,6 @@ export class GeminiInterceptor extends BaseAPIInterceptor {
     modelInstance: any,
     request: any
   ): Promise<any> {
-    const { getCurrentConfig } = require('../core');
     const config = getCurrentConfig();
 
     if (!config) {
@@ -123,7 +124,6 @@ export class GeminiInterceptor extends BaseAPIInterceptor {
     const modelName = this.extractModelName(response, modelInstance);
 
     // Save conversation
-    const { saveConversationTurn } = require('../core');
     await saveConversationTurn(
       this.PROVIDER,
       modelName,
@@ -143,7 +143,6 @@ export class GeminiInterceptor extends BaseAPIInterceptor {
     modelInstance: any,
     request: any
   ): Promise<any> {
-    const { getCurrentConfig } = require('../core');
     const config = getCurrentConfig();
 
     if (!config) {
@@ -383,7 +382,6 @@ export class GeminiInterceptor extends BaseAPIInterceptor {
     const response = this.buildResponseFromChunks(chunks);
 
     // Save to Letta
-    const { saveConversationTurn } = require('../core');
     saveConversationTurn(
       this.PROVIDER,
       modelName,

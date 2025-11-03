@@ -9,7 +9,7 @@ export { AgenticLearning } from './client';
 export type { AgenticLearningOptions } from './client';
 
 // Export context managers
-export { learning, withLearning, getCurrentConfig, saveConversationTurn } from './core';
+export { learning, withLearning, getCurrentConfig } from './core';
 
 // Export interceptors (this also triggers registration via side effects)
 export { install, registerInterceptor, uninstallAll } from './interceptors';

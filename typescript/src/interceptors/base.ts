@@ -5,8 +5,8 @@
  * Provides common functionality for capturing conversations and injecting memory.
  */
 
-// Provider type - expand as new providers are added
-export type Provider = 'gemini' | 'claude' | 'anthropic' | 'openai';
+import type { Provider } from '../types';
+import { saveConversationTurn } from './utils';
 
 /**
  * Base interceptor interface
@@ -150,7 +150,6 @@ export abstract class BaseAPIInterceptor implements IBaseInterceptor {
     const response = this.buildResponseFromChunks(chunks);
 
     // Save the turn
-    const { saveConversationTurn } = await import('../core');
     await saveConversationTurn(
       this.PROVIDER,
       modelName,

@@ -8,7 +8,9 @@
  */
 
 import { BaseAPIInterceptor } from './base';
-import type { Provider } from './base';
+import type { Provider } from '../types';
+import { getCurrentConfig } from '../core';
+import { saveConversationTurn } from './utils';
 
 interface TransportMessage {
   type: string;
@@ -64,7 +66,6 @@ export class ClaudeInterceptor extends BaseAPIInterceptor {
         OriginalConstructor.apply(this, args);
 
         // Inject memory into system prompt if enabled
-        const { getCurrentConfig } = require('../core');
         const config = getCurrentConfig();
         if (config) {
           interceptor.injectMemoryIntoOptions(this._options || this.options, config);
@@ -77,7 +78,6 @@ export class ClaudeInterceptor extends BaseAPIInterceptor {
       // Patch write() to capture outgoing messages
       const originalWrite = SubprocessCLITransport.prototype.write;
       SubprocessCLITransport.prototype.write = async function (this: any, data: string) {
-        const { getCurrentConfig } = require('../core');
         const config = getCurrentConfig();
 
         // Capture user message
@@ -92,7 +92,6 @@ export class ClaudeInterceptor extends BaseAPIInterceptor {
       // Patch readMessages() to capture incoming messages
       const originalReadMessages = SubprocessCLITransport.prototype.readMessages;
       SubprocessCLITransport.prototype.readMessages = function (this: any) {
-        const { getCurrentConfig } = require('../core');
         const config = getCurrentConfig();
 
         // Get original message iterator
@@ -302,7 +301,6 @@ export class ClaudeInterceptor extends BaseAPIInterceptor {
 
       // Only save if we have at least one message
       if (userMessage || assistantMessage) {
-        const { saveConversationTurn } = require('../core');
         try {
           // Save asynchronously (don't await)
           saveConversationTurn(

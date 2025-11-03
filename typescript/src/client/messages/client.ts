@@ -7,6 +7,7 @@
 import type { AgenticLearning } from '../index';
 import type { Letta } from '@letta-ai/letta-client';
 import { MessagesContextClient } from './context';
+import type { Provider } from '../../types';
 
 // Use the Letta SDK's message type directly
 export type Message = Letta.LettaMessageUnion;
@@ -41,27 +42,92 @@ export class MessagesClient {
       return [];
     }
 
-    const messages = await this.parent.letta.agents.messages.list(agentState.id, {
+    const result = await this.parent.letta.agents.messages.list(agentState.id, {
       before: options.before,
       after: options.after,
       limit: options.limit,
     });
 
-    // Return messages directly from Letta SDK - no remapping needed
-    return messages as Message[];
+    // Extract items from page result if available
+    return result?.items || result || [];
   }
 
   /**
-   * Create new messages for the agent.
+   * Capture conversation messages without invoking the agent's LLM.
    *
-   * @param agentId - ID of the agent to create messages for
-   * @param requestMessages - List of message dictionaries with 'role' and 'content'
-   * @returns Response from Letta
+   * @param agent - Name of the agent to capture messages for
+   * @param options - Capture options
+   * @param options.provider - Provider used for the request
+   * @param options.requestMessages - List of request messages
+   * @param options.responseDict - Response from downstream LLM provider
+   * @param options.model - Model name used for the request
+   * @returns JSON response with success status
    */
-  async create(agentId: string, requestMessages: Array<{role: 'user' | 'assistant' | 'system'; content: string}>): Promise<any> {
-    return await this.parent.letta.agents.messages.create(agentId, {
-      messages: requestMessages as any,
+  async capture(
+    agent: string,
+    options: {
+      provider: Provider;
+      requestMessages: Array<{ role: string; content: string }>;
+      responseDict: { role: string; content: string };
+      model: string;
+    }
+  ): Promise<any> {
+    // First get the agent to get its ID
+    const agentState = await this.parent.agents.retrieve(agent);
+    if (!agentState) {
+      return null;
+    }
+
+    // Use direct fetch for capture endpoint
+    const captureUrl = `${this.parent.baseUrl}/v1/agents/${agentState.id}/messages/capture`;
+
+    // Get auth token from environment
+    const token = process.env.LETTA_API_KEY || null;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(captureUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        provider: options.provider,
+        request_messages: options.requestMessages,
+        response_dict: options.responseDict,
+        model: options.model,
+      }),
     });
+
+    if (!response.ok) {
+      throw new Error(`Failed to capture conversation: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Send new messages to the agent, invoking the agent's LLM.
+   *
+   * @param agent - Name of the agent to send messages to
+   * @param messages - List of message dictionaries with 'role' and 'content'
+   * @returns List of message objects
+   */
+  async create(agent: string, messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>): Promise<Message[]> {
+    // First get the agent to get its ID
+    const agentState = await this.parent.agents.retrieve(agent);
+    if (!agentState) {
+      return [];
+    }
+
+    const response = await this.parent.letta.agents.messages.send(agentState.id, {
+      messages: messages as any,
+    });
+
+    // Extract messages from response
+    return response?.messages || [];
   }
 
   /**

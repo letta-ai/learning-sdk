@@ -200,9 +200,9 @@ AgenticLearning()
 │   ├── remember()  # Store memories
 │   └── context     # Memory context retrieval
 └── messages        # Message history
-    ├── create()    # Save conversation turn
+    ├── capture()   # Save conversation turn
     ├── list()
-    └── search()
+    └── create()    # Send message to LLM
 
 ```
 

@@ -6,7 +6,9 @@
  */
 
 import { BaseAPIInterceptor } from './base';
-import type { Provider } from './base';
+import type { Provider } from '../types';
+import { getCurrentConfig } from '../core';
+import { saveConversationTurn } from './utils';
 
 export class AnthropicInterceptor extends BaseAPIInterceptor {
   readonly PROVIDER: Provider = 'anthropic';
@@ -107,7 +109,6 @@ export class AnthropicInterceptor extends BaseAPIInterceptor {
     params: any,
     options?: any
   ): Promise<any> {
-    const { getCurrentConfig } = require('../core');
     const config = getCurrentConfig();
 
     if (!config) {
@@ -138,7 +139,6 @@ export class AnthropicInterceptor extends BaseAPIInterceptor {
       // Non-streaming - extract and save immediately
       const modelName = this.extractModelName(response);
 
-      const { saveConversationTurn } = require('../core');
       await saveConversationTurn(
         this.PROVIDER,
         modelName,
@@ -316,7 +316,6 @@ export class AnthropicInterceptor extends BaseAPIInterceptor {
     const response = this.buildResponseFromChunks(chunks);
 
     // Save to Letta
-    const { saveConversationTurn } = require('../core');
     saveConversationTurn(
       this.PROVIDER,
       modelName,

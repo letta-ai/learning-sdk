@@ -5,13 +5,8 @@ This module provides a context manager for automatic learning/memory integration
 with Letta. It captures conversation turns and saves them to Letta for persistent memory.
 """
 
-import os
 from contextvars import ContextVar, Token
-from typing import TYPE_CHECKING, Dict, List, Optional
-
-if TYPE_CHECKING:
-    from .client import AgenticLearning, AsyncAgenticLearning
-    from .interceptors.base import Provider
+from typing import List, Optional
 
 
 _LEARNING_CONFIG: ContextVar[Optional[dict]] = ContextVar('learning_config', default=None)
@@ -59,9 +54,9 @@ class LearningContext:
             client: AgenticLearning client instance (sync)
             agent: Name of the Letta agent to use for memory storage
             capture_only: Whether to skip auto-injecting memory into prompts
-                Set to True to capture conversations without memory injection
-            memory: List of Letta memory blocks to configure for the agent
-            model: Optional model to use for Letta agent
+                Set to True to capture conversations without memory injection on subsequent turns
+            memory: List of Letta memory block labels to configure for the agent
+            model: Optional model to use for Letta agent (e.g. "anthropic/claude-sonnet-4-20250514")
         """
         self.agent_name = agent
         self.client = client
@@ -72,7 +67,6 @@ class LearningContext:
 
     def __enter__(self):
         """Enter the learning context."""
-        # Install interceptors on first use (auto-detect available SDKs)
         _ensure_interceptors_installed()
 
         self._token = _LEARNING_CONFIG.set({
@@ -111,7 +105,7 @@ def learning(
 
     Args:
         agent: Name of the Letta agent to use for memory storage. Defaults to 'letta_agent'.
-        client: Optional AgenticLearning client instance (sync). If None, will create default client.
+        client: Optional AgenticLearning client instance (sync). If None, will create default client using LETTA_API_KEY from env.
         capture_only: Whether to capture conversations without automatic Letta memory injection (default: False)
         memory: Optional list of Letta memory blocks to configure for the agent (default: ["human"])
         model: Optional model to use for Letta agent (default: "anthropic/claude-sonnet-4-20250514")
@@ -124,14 +118,12 @@ def learning(
         >>>
         >>> # Simplest usage - one line!
         >>> with learning(agent="my_agent"):
-        >>>     # Your SDK calls here
+        >>>     # Your LLM API calls here
         >>>     pass
         >>>
-        >>> # With custom client
-        >>> from agentic_learning import AgenticLearning
-        >>> client = AgenticLearning()
-        >>> with learning(agent="my_agent", client=client):
-        >>>     # Your SDK calls here
+        >>> # With custom memory blocks
+        >>> with learning(agent="sales_bot", memory=["customer", "product"]):
+        >>>     # Your LLM API calls here
         >>>     pass
     """
     if client is None:
@@ -157,9 +149,9 @@ class AsyncLearningContext:
             client: AsyncAgenticLearning client instance (async)
             agent: Name of the Letta agent to use for memory storage
             capture_only: Whether to skip auto-injecting memory into prompts
-                Set to True to capture conversations without memory injection
-            memory: List of Letta memory blocks to configure for the agent
-            model: Optional model to use for Letta agent
+                Set to True to capture conversations without memory injection on subsequent turns
+            memory: List of Letta memory block labels to configure for the agent
+            model: Optional model to use for Letta agent (e.g. "anthropic/claude-sonnet-4-20250514")
         """
         self.agent_name = agent
         self.client = client
@@ -170,7 +162,6 @@ class AsyncLearningContext:
 
     async def __aenter__(self):
         """Enter the learning context."""
-        # Install interceptors on first use (auto-detect available SDKs)
         _ensure_interceptors_installed()
 
         self._token = _LEARNING_CONFIG.set({
@@ -209,7 +200,7 @@ def learning_async(
 
     Args:
         agent: Name of the Letta agent to use for memory storage. Defaults to 'letta_agent'.
-        client: Optional AsyncAgenticLearning client instance (async). If None, will create default client.
+        client: Optional AsyncAgenticLearning client instance (async). If None, will create default client using LETTA_API_KEY from env.
         capture_only: Whether to capture conversations without automatic Letta memory injection (default: False)
         memory: Optional list of Letta memory blocks to configure for the agent (default: ["human"])
         model: Optional model to use for Letta agent (default: "anthropic/claude-sonnet-4-20250514")
@@ -222,14 +213,12 @@ def learning_async(
         >>>
         >>> # Simplest usage - one line!
         >>> async with learning_async(agent="my_agent"):
-        >>>     # Your SDK calls here
+        >>>     # Your LLM API calls here
         >>>     pass
         >>>
-        >>> # With custom client
-        >>> from agentic_learning import AsyncAgenticLearning
-        >>> client = AsyncAgenticLearning()
-        >>> async with learning_async(agent="my_agent", client=client):
-        >>>     # Your SDK calls here
+        >>> # With custom memory blocks
+        >>> async with learning_async(agent="sales_bot", memory=["customer", "product"]):
+        >>>     # Your LLM API calls here
         >>>     pass
     """
     if client is None:
@@ -237,130 +226,3 @@ def learning_async(
         client = AsyncAgenticLearning()
 
     return AsyncLearningContext(agent=agent, client=client, capture_only=capture_only, memory=memory, model=model)
-
-
-def _save_conversation_turn(
-    provider: "Provider",
-    model: str,
-    request_messages: List[dict] = None,
-    response_dict: Dict[str, str] = None,
-):
-    """
-    Save a conversation turn to Letta in a single API call.
-
-    Args:
-        provider: Provider of the messages (e.g. "gemini", "claude", "anthropic", "openai")
-        model: Model name
-        request_messages: List of request messages
-        response_dict: Response from provider
-    """
-    config = get_current_config()
-    if not config:
-        return
-
-    agent = config["agent_name"]
-    client = config["client"]
-
-    if not client:
-        return
-
-    try:
-        # Get or create agent using simplified API
-        agent_state = client.agents.retrieve(agent=agent)
-
-        if not agent_state:
-            agent_state = client.agents.create(
-                agent=agent,
-                memory=config["memory"],
-                model=config["model"],
-            )
-
-        # Get base URL from client or use placeholder
-        base_url = client.base_url or 'https://api.letta.com'
-        capture_url = f"{base_url}/v1/agents/{agent_state.id}/messages/capture"
-
-        # Build request payload
-        payload = {
-            "provider": provider,
-            "request_messages": request_messages or [],
-            "response_dict": response_dict or {},
-            "model": model
-        }
-
-        # Make POST request to Letta capture endpoint
-        import httpx
-        
-        # Get auth token from client
-        token = os.getenv("LETTA_API_KEY", None)
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
-        
-        with httpx.Client(timeout=30.0) as http_client:
-            response = http_client.post(capture_url, json=payload, headers=headers)
-            response.raise_for_status()
-
-    except Exception:
-        pass
-
-
-async def _save_conversation_turn_async(
-    provider: "Provider",
-    model: str,
-    request_messages: List[dict] = None,
-    response_dict: Dict[str, str] = None,
-):
-    """
-    Save a conversation turn to Letta in a single API call (async version).
-
-    Args:
-        provider: Provider of the messages (e.g. "gemini", "claude", "anthropic", "openai")
-        model: Model name
-        request_messages: List of request messages
-        response_dict: Response from provider
-    """
-    config = get_current_config()
-    if not config:
-        return
-
-    agent = config["agent_name"]
-    client = config["client"]
-
-    if not client:
-        return
-
-    try:
-        # Get or create agent using simplified API
-        agent_state = await client.agents.retrieve(agent=agent)
-
-        if not agent_state:
-            agent_state = await client.agents.create(
-                agent=agent,
-                memory=config["memory"],
-                model=config["model"],
-            )
-
-        # Get base URL from client or use placeholder
-        base_url = client.base_url or 'https://api.letta.com'
-        capture_url = f"{base_url}/v1/agents/{agent_state.id}/messages/capture"
-
-        # Build request payload
-        payload = {
-            "provider": provider,
-            "request_messages": request_messages or [],
-            "response_dict": response_dict or {},
-            "model": model,
-        }
-
-        # Make async POST request to Letta capture endpoint
-        import httpx
-        
-        # Get auth token from client
-        token = os.getenv("LETTA_API_KEY", None)
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
-        
-        async with httpx.AsyncClient(timeout=30.0) as http_client:
-            response = await http_client.post(capture_url, json=payload, headers=headers)
-            response.raise_for_status()
-
-    except Exception:
-        pass
-    

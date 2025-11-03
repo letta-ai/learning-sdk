@@ -6,7 +6,6 @@
  */
 
 import { AsyncLocalStorage } from 'async_hooks';
-import type { Provider } from './interceptors/base';
 import type { AgenticLearning } from './client';
 
 /**
@@ -152,76 +151,4 @@ export async function withLearning<T>(
 
   // Use AsyncLocalStorage.run() for automatic context management
   return learningContext.run(config, fn);
-}
-
-/**
- * Save a conversation turn to Letta
- *
- * @param provider Provider of the messages (e.g. "gemini", "claude", "anthropic", "openai")
- * @param model Model name
- * @param requestMessages List of request messages
- * @param responseDict Response from provider
- */
-export async function saveConversationTurn(
-  provider: Provider,
-  model: string,
-  requestMessages: Array<{ role: string; content: string }> = [],
-  responseDict: { role: string; content: string } = { role: 'assistant', content: '' }
-): Promise<void> {
-  const config = getCurrentConfig();
-  if (!config) {
-    return;
-  }
-
-  const agent = config.agentName;
-  const client = config.client;
-
-  if (!client) {
-    return;
-  }
-
-  try {
-    // Get or create agent
-    let agentState = await client.agents.retrieve(agent);
-
-    if (!agentState) {
-      agentState = await client.agents.create({
-        agent,
-        memory: config.memory,
-        model: config.model,
-      });
-    }
-
-    // Use direct fetch for capture endpoint (not yet in Letta client)
-    const captureUrl = `${client.baseUrl}/v1/agents/${agentState.id}/messages/capture`;
-
-    // Get auth token from environment
-    const token = process.env.LETTA_API_KEY || null;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(captureUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        provider,
-        request_messages: requestMessages,
-        response_dict: responseDict,
-        model,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to capture conversation: ${response.statusText}`);
-    }
-  } catch (error) {
-    // Silently fail - don't crash the application
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[AgenticLearning] Failed to save conversation:', error);
-    }
-  }
 }
