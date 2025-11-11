@@ -25,7 +25,7 @@ Usage with Custom Letta Client - Sync:
     >>> from agentic_learning import learning
     >>> from letta_client import Letta
     >>>
-    >>> letta = Letta(base_url="http://localhost:8283", token=None)
+    >>> letta = Letta(base_url="http://localhost:8283")
     >>>
     >>> with learning(agent="my_agent", client=letta):
     >>>     # Your SDK calls here
@@ -35,7 +35,7 @@ Usage with Custom Letta Client - Async:
     >>> from agentic_learning import learning_async
     >>> from letta_client import AsyncLetta
     >>>
-    >>> letta = AsyncLetta(base_url="http://localhost:8283", token=None)
+    >>> letta = AsyncLetta(base_url="http://localhost:8283")
     >>>
     >>> async with learning_async(agent="my_agent", client=letta):
     >>>     # Your SDK calls here
