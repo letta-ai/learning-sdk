@@ -13,7 +13,7 @@
  */
 
 import OpenAI from 'openai';
-import { AgenticLearning, withLearning } from '../typescript/src';
+import { AgenticLearning, learning } from '../typescript/src';
 import { printU, printA, printG, printR, printMessages } from './utils';
 
 // Configure OpenAI
@@ -46,7 +46,7 @@ async function example1() {
   const client = new OpenAI({ apiKey });
 
   // Use the learning context - this is all you need!
-  await withLearning({ agent: 'openai-demo', client: learningClient }, async () => {
+  await learning({ agent: 'openai-demo', client: learningClient }, async () => {
     printU('My name is Alice.');
     const response1 = await client.chat.completions.create({
       model: 'gpt-4o',
@@ -79,7 +79,7 @@ async function example2() {
 
   const client = new OpenAI({ apiKey });
 
-  await withLearning({ agent: 'openai-demo', client: learningClient }, async () => {
+  await learning({ agent: 'openai-demo', client: learningClient }, async () => {
     printU(
       'Letta is my favorite context management service. Can you send me a summary about the product Letta (fka MemGPT) offers?'
     );
@@ -145,7 +145,7 @@ async function example3() {
 
   const client = new OpenAI({ apiKey });
 
-  await withLearning({
+  await learning({
     agent: 'openai-demo',
     captureOnly: true,
     client: learningClient,

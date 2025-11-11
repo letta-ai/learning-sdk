@@ -13,7 +13,7 @@
  */
 
 import { ClaudeSDKClient, ClaudeAgentOptions } from 'claude-agent-sdk';
-import { AgenticLearning, withLearning } from '../typescript/src';
+import { AgenticLearning, learning } from '../typescript/src';
 import { printU, printA, printG, printR, printMessages } from './utils';
 
 // Configure Claude
@@ -47,7 +47,7 @@ async function example1() {
   let client = new ClaudeSDKClient(options);
 
   // Use the learning context - this is all you need!
-  await withLearning({ agent: 'claude-demo', client: learningClient }, async () => {
+  await learning({ agent: 'claude-demo', client: learningClient }, async () => {
     await client.connect();
 
     printU('My name is Alice.');
@@ -71,7 +71,7 @@ async function example1() {
   // Create a separate session
   client = new ClaudeSDKClient(options);
 
-  await withLearning({ agent: 'claude-demo', client: learningClient }, async () => {
+  await learning({ agent: 'claude-demo', client: learningClient }, async () => {
     await client.connect();
 
     printU("What's my name?");
@@ -108,7 +108,7 @@ async function example2() {
   const options = new ClaudeAgentOptions();
   let client = new ClaudeSDKClient(options);
 
-  await withLearning({ agent: 'claude-demo', client: learningClient }, async () => {
+  await learning({ agent: 'claude-demo', client: learningClient }, async () => {
     await client.connect();
 
     printU(
@@ -166,7 +166,7 @@ async function example3() {
   const options = new ClaudeAgentOptions();
   let client = new ClaudeSDKClient(options);
 
-  await withLearning({
+  await learning({
     agent: 'claude-demo',
     captureOnly: true,
     client: learningClient,

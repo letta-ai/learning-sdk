@@ -13,7 +13,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { AgenticLearning, withLearning, enableAnthropicInterception } from '../typescript/src';
+import { AgenticLearning, learning, enableAnthropicInterception } from '../typescript/src';
 import { printU, printA, printG, printR, printMessages } from './utils';
 
 // Configure Anthropic
@@ -49,7 +49,7 @@ async function example1() {
   enableAnthropicInterception(client);
 
   // Use the learning context - this is all you need!
-  await withLearning({ agent: 'anthropic-demo', client: learningClient }, async () => {
+  await learning({ agent: 'anthropic-demo', client: learningClient }, async () => {
     printU('My name is Alice.');
     const response1 = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
@@ -87,7 +87,7 @@ async function example2() {
   const client = new Anthropic({ apiKey });
   enableAnthropicInterception(client);
 
-  await withLearning({ agent: 'anthropic-demo', client: learningClient }, async () => {
+  await learning({ agent: 'anthropic-demo', client: learningClient }, async () => {
     printU(
       'Letta is my favorite context management service. Can you send me a summary about the product Letta (fka MemGPT) offers?'
     );
@@ -155,7 +155,7 @@ async function example3() {
   const client = new Anthropic({ apiKey });
   enableAnthropicInterception(client);
 
-  await withLearning({
+  await learning({
     agent: 'anthropic-demo',
     captureOnly: true,
     client: learningClient,

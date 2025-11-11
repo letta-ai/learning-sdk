@@ -13,7 +13,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { withLearning } from "@letta-ai/agentic-learning";
+import { learning } from "@letta-ai/agentic-learning";
 
 // Initialize LLM client
 const client = new Anthropic();
@@ -22,7 +22,7 @@ async function askClaude(message: string) {
   console.log(`User: ${message}\n`);
 
   // That's it - wrap your API calls to enable persistent memory
-  await withLearning({ agent: 'quickstart-ts-demo' }, async () => {
+  await learning({ agent: 'quickstart-ts-demo' }, async () => {
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,

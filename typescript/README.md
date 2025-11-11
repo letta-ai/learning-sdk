@@ -3,7 +3,7 @@
 Add persistent memory to any LLM agent with one line of code. This Agentic Learning SDK automatically captures conversations, manages context, and enables agents to remember information across sessions.
 
 ```typescript
-await withLearning({ agent: 'my_agent' }, async () => {
+await learning({ agent: 'my_agent' }, async () => {
     response = client.chat.completions.create(...) // Memory handled automatically
 });
 ```
@@ -28,12 +28,12 @@ export LETTA_API_KEY="your-letta-key"
 
 ```typescript
 import OpenAI from 'openai';
-import { withLearning } from '@letta-ai/agentic-learning';
+import { learning } from '@letta-ai/agentic-learning';
 
 const openai = new OpenAI();
 
 // Add memory to your agent with one line
-await withLearning({ agent: 'my-agent' }, async () => {
+await learning({ agent: 'my-agent' }, async () => {
   // Your LLM call - conversation is automatically captured
   const response = await openai.chat.completions.create({
     model: 'gpt-5',
@@ -96,7 +96,7 @@ const learningClient = new AgenticLearning({
   baseUrl: "http://localhost:8283"
 });
 
-await withLearning({ agent: 'my-agent', client: learningClient }, async () => {
+await learning({ agent: 'my-agent', client: learningClient }, async () => {
     // Your LLM call - conversation is automatically captured
 });
 ```

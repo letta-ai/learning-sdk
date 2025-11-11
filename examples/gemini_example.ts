@@ -13,7 +13,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { AgenticLearning, withLearning } from '../typescript/src';
+import { AgenticLearning, learning } from '../typescript/src';
 import { printU, printA, printG, printR, printMessages } from './utils';
 
 // Configure Gemini
@@ -49,7 +49,7 @@ async function example1() {
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
   // Use the learning context - this is all you need!
-  await withLearning({ agent: 'gemini-demo', client: learningClient }, async () => {
+  await learning({ agent: 'gemini-demo', client: learningClient }, async () => {
     printU('My name is Alice.');
     const response1 = await model.generateContent('My name is Alice.');
     printA(`${response1.response.text()}\n`);
@@ -77,7 +77,7 @@ async function example2() {
   const genAI = new GoogleGenerativeAI(geminiApiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
-  await withLearning({ agent: 'gemini-demo', client: learningClient }, async () => {
+  await learning({ agent: 'gemini-demo', client: learningClient }, async () => {
     printU(
       'Letta is my favorite context management service. Can you send me a summary about the product Letta (fka MemGPT) offers?'
     );
@@ -127,7 +127,7 @@ async function example3() {
   const genAI = new GoogleGenerativeAI(geminiApiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
-  await withLearning({
+  await learning({
     agent: 'gemini-demo',
     captureOnly: true,
     client: learningClient,

@@ -37,83 +37,14 @@ export function getCurrentConfig(): LearningConfig | null {
 }
 
 /**
- * Learning context manager
- *
- * Creates an async-safe learning context that automatically captures
- * LLM conversations and manages memory with Letta.
- *
- * Usage:
- * ```typescript
- * const context = learning({
- *   agent: 'my-agent',
- *   client: learningClient
- * });
- *
- * try {
- *   // Your LLM calls here - automatically captured!
- *   await client.chat.completions.create(...);
- * } finally {
- *   context.exit();
- * }
- * ```
- *
- * @param options Configuration for the learning context
- * @returns Context object with exit() method
- */
-export function learning(options: {
-  agent: string;
-  client?: AgenticLearning;
-  captureOnly?: boolean;
-  memory?: string[];
-  model?: string;
-}): {
-  exit: () => void;
-} {
-  // Auto-install interceptors on first use
-  if (!interceptorsInstalled) {
-    const { install } = require('./interceptors');
-    install();
-    interceptorsInstalled = true;
-  }
-
-  // Save the previous context (for nested contexts)
-  const previousStore = learningContext.getStore();
-
-  // Create default client if not provided
-  const client = options.client || new (require('./client').AgenticLearning)();
-
-  const config: LearningConfig = {
-    agentName: options.agent,
-    client: client,
-    captureOnly: options.captureOnly || false,
-    memory: options.memory || [],
-    model: options.model,
-  };
-
-  // Enter the new context using AsyncLocalStorage
-  learningContext.enterWith(config);
-
-  return {
-    exit: () => {
-      // Restore previous context (or clear if none)
-      if (previousStore) {
-        learningContext.enterWith(previousStore);
-      } else {
-        learningContext.disable();
-      }
-    },
-  };
-}
-
-/**
- * Async learning context manager with callback
+ * Learning context manager (callback style)
  *
  * Uses AsyncLocalStorage's run() method for optimal performance.
  * Automatically manages context lifecycle - no manual exit() needed.
  *
  * Matches Python's `with learning(...)` pattern:
  * ```typescript
- * await withLearning({
+ * await learning({
  *   agent: 'my-agent',
  *   client: learningClient
  * }, async () => {
@@ -127,7 +58,7 @@ export function learning(options: {
  * @param fn Async function to execute within the learning context
  * @returns Promise resolving to the function's return value
  */
-export async function withLearning<T>(
+export async function learning<T>(
   options: {
     agent: string;
     client?: AgenticLearning;
@@ -158,3 +89,4 @@ export async function withLearning<T>(
   // Use AsyncLocalStorage.run() for automatic context management
   return learningContext.run(config, fn);
 }
+
