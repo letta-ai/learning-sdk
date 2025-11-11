@@ -62,7 +62,7 @@ export function getCurrentConfig(): LearningConfig | null {
  */
 export function learning(options: {
   agent: string;
-  client: AgenticLearning;
+  client?: AgenticLearning;
   captureOnly?: boolean;
   memory?: string[];
   model?: string;
@@ -79,9 +79,12 @@ export function learning(options: {
   // Save the previous context (for nested contexts)
   const previousStore = learningContext.getStore();
 
+  // Create default client if not provided
+  const client = options.client || new (require('./client').AgenticLearning)();
+
   const config: LearningConfig = {
     agentName: options.agent,
-    client: options.client,
+    client: client,
     captureOnly: options.captureOnly || false,
     memory: options.memory || [],
     model: options.model,
@@ -127,7 +130,7 @@ export function learning(options: {
 export async function withLearning<T>(
   options: {
     agent: string;
-    client: AgenticLearning;
+    client?: AgenticLearning;
     captureOnly?: boolean;
     memory?: string[];
     model?: string;
@@ -141,9 +144,12 @@ export async function withLearning<T>(
     interceptorsInstalled = true;
   }
 
+  // Create default client if not provided
+  const client = options.client || new (require('./client').AgenticLearning)();
+
   const config: LearningConfig = {
     agentName: options.agent,
-    client: options.client,
+    client: client,
     captureOnly: options.captureOnly || false,
     memory: options.memory || [],
     model: options.model,
