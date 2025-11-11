@@ -7,7 +7,7 @@ name = "agentic-learning"
 version = "0.2.1"
 description = "Drop-in SDK for adding persistent memory and learning to any agent."
 readme = "../README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 authors = [
     {name = "Caren Thomas", email = "caren@letta.com"}
@@ -18,7 +18,7 @@ dependencies = [
     "pydantic>=1.9.2",
     "pydantic-core>=2.18.2",
     "typing_extensions>=4.0.0",
-    "letta_client==1.0.0a12",
+    "letta_client==1.0.0a18",
 ]
 
 # Optional dependencies for different providers
