@@ -98,8 +98,9 @@ def _save_conversation_turn(
             provider=provider,
         )
 
-    except Exception:
-        pass
+    except Exception as e:
+        import sys
+        print(f"[Warning] Failed to save conversation turn: {e}", file=sys.stderr)
 
 
 async def _save_conversation_turn_async(
@@ -128,23 +129,47 @@ async def _save_conversation_turn_async(
         return
 
     try:
-        # Get or create agent using simplified API
-        agent_state = await client.agents.retrieve(agent=agent)
+        # Check if client is async or sync
+        import inspect
+        is_async_client = inspect.iscoroutinefunction(client.agents.retrieve)
 
-        if not agent_state:
-            agent_state = await client.agents.create(
+        if is_async_client:
+            # Get or create agent using async API
+            agent_state = await client.agents.retrieve(agent=agent)
+
+            if not agent_state:
+                agent_state = await client.agents.create(
+                    agent=agent,
+                    memory=config["memory"],
+                    model=config["model"],
+                )
+
+            return await client.messages.capture(
                 agent=agent,
-                memory=config["memory"],
-                model=config["model"],
+                request_messages=request_messages or [],
+                response_dict=response_dict or {},
+                model=model,
+                provider=provider,
+            )
+        else:
+            # Use sync client (common when using sync client with async context)
+            agent_state = client.agents.retrieve(agent=agent)
+
+            if not agent_state:
+                agent_state = client.agents.create(
+                    agent=agent,
+                    memory=config["memory"],
+                    model=config["model"],
+                )
+
+            return client.messages.capture(
+                agent=agent,
+                request_messages=request_messages or [],
+                response_dict=response_dict or {},
+                model=model,
+                provider=provider,
             )
 
-        return await client.messages.capture(
-            agent=agent,
-            request_messages=request_messages or [],
-            response_dict=response_dict or {},
-            model=model,
-            provider=provider,
-        )
-
-    except Exception:
-        pass
+    except Exception as e:
+        import sys
+        print(f"[Warning] Failed to save conversation turn: {e}", file=sys.stderr)

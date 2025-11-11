@@ -64,6 +64,7 @@ class AgentsClient:
         self._letta.groups.modify(
             group_id=agent.multi_agent_group.id,
             manager_config=SleeptimeManagerParam(
+                manager_type="sleeptime",
                 sleeptime_agent_frequency=2,
             ),
         )
@@ -196,6 +197,7 @@ class AsyncAgentsClient:
         """
         agent = await self._letta.agents.create(
             name=agent,
+            agent_type="letta_v1_agent",
             memory_blocks=[{"label": label, "value": memory_placeholder(label)} for label in memory],
             model=model,
             embedding="openai/text-embedding-3-small",
@@ -205,6 +207,7 @@ class AsyncAgentsClient:
         await self._letta.groups.modify(
             group_id=agent.multi_agent_group.id,
             manager_config=SleeptimeManagerParam(
+                manager_type="sleeptime",
                 sleeptime_agent_frequency=2,
             ),
         )

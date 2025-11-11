@@ -51,7 +51,7 @@ with learning(agent="gemini-demo", client=learning_client):
     response = model.generate_content("My name is Alice.")
     print_a(f"{response.text}\n")
 
-    time.sleep(5) # wait for memory to persist
+    time.sleep(10) # wait for memory to persist
 
     print_u("What's my name?")
     response = model.generate_content("What's my name?")
@@ -83,7 +83,7 @@ with learning(agent="gemini-demo", client=learning_client):
 
     print()
 
-    time.sleep(5) # wait for memory to persist
+    time.sleep(10) # wait for memory to persist
 
     print_u("What's my favorite context management service?")
     print_a("", end="", flush=True)
@@ -116,9 +116,9 @@ with learning(agent="gemini-demo", capture_only=True, client=learning_client):
     response = model.generate_content("I am a software engineer.")
     print_a(f"{response.text}\n")
 
-    time.sleep(5)  # Wait for memory to persist
+    time.sleep(10)  # Wait for memory to persist
 
-    print_r("Testing recall without default memory injection\n")
+    print_r("Testing recall without memory injection (capture_only=True)\n")
     print_u("What's my professional background?")
     response = model.generate_content("What's my professional background?")
     print_a(f"{response.text}\n")
@@ -128,11 +128,13 @@ print_u("What's my professional background?")
 messages = learning_client.memory.search("gemini-demo", "What's my professional background?")
 print_messages(messages)
 
+print_g("✓ Memory recall successful!\n")
+
 print_g("\nListing stored message history\n")
 messages = learning_client.messages.list("gemini-demo", limit=12)
 print_messages(messages)
 
-print_g("✓ Memory recall successful!\n")
+print_g("✓ Message recall successful!\n")
 
 print("=" * 60)
 print("All examples complete!")

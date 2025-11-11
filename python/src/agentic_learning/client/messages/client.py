@@ -73,11 +73,11 @@ class MessagesClient:
         return result.items
     
     def capture(
-        self, 
-        agent: str, 
+        self,
+        agent: str,
         request_messages: List[dict],
         response_dict: dict,
-        model_name: str,
+        model: str,
         provider: str,
     ) -> None:
         """
@@ -87,7 +87,7 @@ class MessagesClient:
             agent (str): Name of the agent to capture messages for
             request_messages (List[dict]): List of dictionaries with 'role' and 'content' fields
             response_dict (dict): Response from downstream llm provider
-            model_name (str): Name of the model used for the request
+            model (str): Name of the model used for the request
             provider (str): Provider used for the request
 
         Returns:
@@ -96,7 +96,7 @@ class MessagesClient:
         agent_id = self._parent.agents._retrieve_id(agent=agent)
         if not agent_id:
             return None
-        
+
         # Get base URL from client or use placeholder
         base_url = self._parent.base_url or 'https://api.letta.com'
         message_capture_url = f"{base_url}/v1/agents/{agent_id}/messages/capture"
@@ -106,16 +106,16 @@ class MessagesClient:
             "provider": provider,
             "request_messages": request_messages or [],
             "response_dict": response_dict or {},
-            "model": model_name,
+            "model": model,
         }
 
         # Make sync POST request to Letta capture endpoint
         import httpx
-        
+
         # Get auth token from client
         token = os.getenv("LETTA_API_KEY", None)
         headers = {"Authorization": f"Bearer {token}"} if token else {}
-        
+
         with httpx.Client(timeout=30.0) as http_client:
             response = http_client.post(message_capture_url, json=payload, headers=headers)
             response.raise_for_status()
@@ -207,7 +207,7 @@ class AsyncMessagesClient:
         agent: str,
         request_messages: List[dict],
         response_dict: dict,
-        model_name: str,
+        model: str,
         provider: str,
     ) -> str:
         """
@@ -217,7 +217,7 @@ class AsyncMessagesClient:
             agent (str): Name of the agent to capture messages for
             request_messages (List[dict]): List of dictionaries with 'role' and 'content' fields
             response_dict (dict): Response from downstream llm provider
-            model_name (str): Name of the model used for the request
+            model (str): Name of the model used for the request
             provider (str): Provider used for the request
 
         Returns:
@@ -236,7 +236,7 @@ class AsyncMessagesClient:
             "provider": provider,
             "request_messages": request_messages or [],
             "response_dict": response_dict or {},
-            "model": model_name,
+            "model": model,
         }
 
         # Make async POST request to Letta capture endpoint

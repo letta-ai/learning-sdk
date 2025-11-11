@@ -238,17 +238,23 @@ class ClaudeInterceptor(BaseInterceptor):
 
             # Only save if we have at least one message
             if user_message or assistant_message:
-                # Save conversation turn (non-blocking)
-                from .utils import _save_conversation_turn
+                # Save conversation turn (await to ensure ordering)
+                from .utils import _save_conversation_turn_async
                 try:
-                    asyncio.create_task(
-                        _save_conversation_turn(
-                            provider=self.PROVIDER,
-                            model="claude",
-                            request_messages=self.build_request_messages(user_message) if user_message else [],
-                            response_dict={"role": "assistant", "content": assistant_message} if assistant_message else {"role": "assistant", "content": ""}
-                        )
+                    save_task = _save_conversation_turn_async(
+                        provider=self.PROVIDER,
+                        model="claude",
+                        request_messages=self.build_request_messages(user_message) if user_message else [],
+                        response_dict={"role": "assistant", "content": assistant_message} if assistant_message else {"role": "assistant", "content": ""}
                     )
+
+                    # Store task in config so context manager can await it
+                    if "pending_save_tasks" not in config:
+                        config["pending_save_tasks"] = []
+                    config["pending_save_tasks"].append(save_task)
+
+                    # Await the task to ensure it completes before iterator finishes
+                    await save_task
                 except Exception:
                     pass
 

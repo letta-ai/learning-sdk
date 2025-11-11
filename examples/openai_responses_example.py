@@ -23,6 +23,22 @@ from openai import OpenAI
 from agentic_learning import learning, AgenticLearning
 from utils import print_u, print_a, print_g, print_r, print_messages
 
+
+def get_text_from_output(output):
+    """Extract text from Responses API output for display."""
+    if isinstance(output, str):
+        return output
+    elif isinstance(output, list):
+        texts = []
+        for message in output:
+            if hasattr(message, 'content'):
+                for content_item in message.content:
+                    if hasattr(content_item, 'text'):
+                        texts.append(content_item.text)
+        return ' '.join(texts) if texts else str(output)
+    return str(output)
+
+
 # Configure OpenAI
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
@@ -53,16 +69,16 @@ with learning(agent="openai-responses-demo", client=learning_client):
         model="gpt-4o",
         input="My name is Alice."
     )
-    print_a(f"{response.output}\n")
+    print_a(f"{get_text_from_output(response.output)}\n")
 
-    time.sleep(5) # wait for memory to persist
+    time.sleep(10) # wait for memory to persist
 
     print_u("What's my name?")
     response = client.responses.create(
         model="gpt-4o",
         input="What's my name?"
     )
-    print_a(f"{response.output}\n")
+    print_a(f"{get_text_from_output(response.output)}\n")
 
 print_g("✓ Conversation automatically saved to Letta!\n")
 
@@ -95,7 +111,7 @@ with learning(agent="openai-responses-demo", client=learning_client):
 
     print("\n")
 
-    time.sleep(5) # wait for memory to persist
+    time.sleep(10) # wait for memory to persist
 
     print_u("What's my favorite context management service?")
     print_a("", end="", flush=True)
@@ -133,28 +149,30 @@ with learning(agent="openai-responses-demo", capture_only=True, client=learning_
         model="gpt-4o",
         input="I am a software engineer."
     )
-    print_a(f"{response.output}\n")
+    print_a(f"{get_text_from_output(response.output)}\n")
 
-    time.sleep(5)  # Wait for memory to persist
+    time.sleep(10)  # Wait for memory to persist
 
-    print_r("Testing recall without default memory injection\n")
+    print_r("Testing recall without memory injection (capture_only=True)\n")
     print_u("What's my professional background?")
     response = client.responses.create(
         model="gpt-4o",
         input="What's my professional background?"
     )
-    print_a(f"{response.output}\n")
+    print_a(f"{get_text_from_output(response.output)}\n")
 
 print_g("Testing memory recall via learning client\n")
 print_u("What's my professional background?")
 messages = learning_client.memory.search("openai-responses-demo", "What's my professional background?")
 print_messages(messages)
 
+print_g("✓ Memory recall successful!\n")
+
 print_g("\nListing stored message history\n")
 messages = learning_client.messages.list("openai-responses-demo", limit=12)
 print_messages(messages)
 
-print_g("✓ Memory recall successful!\n")
+print_g("✓ Message recall successful!\n")
 
 print("=" * 60)
 print("All examples complete!")

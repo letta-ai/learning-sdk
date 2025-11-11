@@ -52,7 +52,7 @@ with learning(agent="openai-demo", client=learning_client):
     )
     print_a(f"{response.choices[0].message.content}\n")
 
-    time.sleep(5) # wait for memory to persist
+    time.sleep(10) # wait for memory to persist
 
     print_u("What's my name?")
     response = client.chat.completions.create(
@@ -88,7 +88,7 @@ with learning(agent="openai-demo", client=learning_client):
 
     print("\n")
 
-    time.sleep(5) # wait for memory to persist
+    time.sleep(10) # wait for memory to persist
 
     print_u("What's my favorite context management service?")
     print_a("", end="", flush=True)
@@ -125,9 +125,9 @@ with learning(agent="openai-demo", capture_only=True, client=learning_client):
     )
     print_a(f"{response.choices[0].message.content}\n")
 
-    time.sleep(5)  # Wait for memory to persist
+    time.sleep(10)  # Wait for memory to persist
 
-    print_r("Testing recall without default memory injection\n")
+    print_r("Testing recall without memory injection (capture_only=True)\n")
     print_u("What's my professional background?")
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -140,11 +140,13 @@ print_u("What's my professional background?")
 messages = learning_client.memory.search("openai-demo", "What's my professional background?")
 print_messages(messages)
 
+print_g("✓ Memory recall successful!\n")
+
 print_g("\nListing stored message history\n")
 messages = learning_client.messages.list("openai-demo", limit=12)
 print_messages(messages)
 
-print_g("✓ Memory recall successful!\n")
+print_g("✓ Message recall successful!\n")
 
 print("=" * 60)
 print("All examples complete!")

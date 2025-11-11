@@ -15,7 +15,6 @@ Usage:
 
 import os
 import sys
-import time
 import asyncio
 from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions, AssistantMessage, TextBlock
 from agentic_learning import learning_async, AgenticLearning
@@ -60,14 +59,17 @@ async def example_1():
                         print(block.text, end="", flush=True)
         print("\n")
 
-        time.sleep(5) # wait for memory to persist
+        await client.disconnect()
 
-    # Create a separate session
+    # Brief wait to ensure message save completes
+    await asyncio.sleep(10)
+
+    # Create a new session - memory will be injected at initialization
     client = ClaudeSDKClient(options)
 
     async with learning_async(agent="claude-demo", client=learning_client):
         await client.connect()
-    
+
         print_u("What's my name?")
         await client.query("What's my name?")
         print_a("", end="", flush=True)
@@ -111,14 +113,17 @@ async def example_2():
 
         print("\n")
 
-        time.sleep(5) # wait for memory to persist
+        await client.disconnect()
 
-    # Create a separate session
+    # Brief wait to ensure message save completes
+    await asyncio.sleep(10)
+
+    # Create a new session - memory will be injected at initialization
     client = ClaudeSDKClient(options)
 
     async with learning_async(agent="claude-demo", client=learning_client):
         await client.connect()
-    
+
         print_u("What's my favorite context management service?")
         await client.query("What's my favorite context management service?")
         print_a("", end="", flush=True)
@@ -162,7 +167,10 @@ async def example_3():
                         print(block.text, end="", flush=True)
         print("\n")
 
-        time.sleep(5)  # Wait for memory to persist
+        await client.disconnect()
+
+    # Brief wait to ensure message save completes
+    await asyncio.sleep(10)
 
     # Create a separate session
     client = ClaudeSDKClient(options)
@@ -170,7 +178,7 @@ async def example_3():
     async with learning_async(agent="claude-demo", capture_only=True, client=learning_client):
         await client.connect()
 
-        print_r("Testing recall without default memory injection\n")
+        print_r("Testing recall without memory injection (capture_only=True)\n")
         print_u("What's my professional background?")
         await client.query("What's my professional background?")
         print_a("", end="", flush=True)
@@ -188,11 +196,13 @@ async def example_3():
     messages = learning_client.memory.search("claude-demo", "What's my professional background?")
     print_messages(messages)
 
+    print_g("✓ Memory recall successful!\n")
+
     print_g("\nListing stored message history\n")
     messages = learning_client.messages.list("claude-demo", limit=12)
     print_messages(messages)
 
-    print_g("✓ Memory recall successful!\n")
+    print_g("✓ Message recall successful!\n")
 
 
 async def main():

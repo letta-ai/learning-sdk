@@ -123,10 +123,19 @@ class OpenAIInterceptor(BaseAPIInterceptor):
             output = response.output
             if isinstance(output, str):
                 return output
-            # If output is a list of content blocks
+            # If output is a list of ResponseOutputMessage objects
             elif isinstance(output, list):
-                text_parts = [item.get('text', '') if isinstance(item, dict) else str(item) for item in output]
-                return ' '.join(text_parts)
+                text_parts = []
+                for message in output:
+                    # Each message has a content attribute with text items
+                    if hasattr(message, 'content'):
+                        for content_item in message.content:
+                            if hasattr(content_item, 'text'):
+                                text_parts.append(content_item.text)
+                    # Fallback for dict format
+                    elif isinstance(message, dict):
+                        text_parts.append(message.get('text', ''))
+                return ' '.join(text_parts) if text_parts else str(output)
 
         # Chat Completions format: response.choices[0].message.content
         if hasattr(response, 'choices') and response.choices:
@@ -148,8 +157,17 @@ class OpenAIInterceptor(BaseAPIInterceptor):
             if isinstance(output, str):
                 return {"role": "assistant", "content": output}
             elif isinstance(output, list):
-                text_parts = [item.get('text', '') if isinstance(item, dict) else str(item) for item in output]
-                return {"role": "assistant", "content": ' '.join(text_parts)}
+                text_parts = []
+                for message in output:
+                    # Each message has a content attribute with text items
+                    if hasattr(message, 'content'):
+                        for content_item in message.content:
+                            if hasattr(content_item, 'text'):
+                                text_parts.append(content_item.text)
+                    # Fallback for dict format
+                    elif isinstance(message, dict):
+                        text_parts.append(message.get('text', ''))
+                return {"role": "assistant", "content": ' '.join(text_parts) if text_parts else str(output)}
 
         # Chat Completions format
         if hasattr(response, 'choices') and response.choices:
