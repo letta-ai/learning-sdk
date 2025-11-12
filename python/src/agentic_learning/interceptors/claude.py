@@ -41,25 +41,21 @@ class ClaudeInterceptor(BaseInterceptor):
             return
 
         # Store original methods (only once)
-        if not hasattr(SubprocessCLITransport, '_original_init'):
-            SubprocessCLITransport._original_init = SubprocessCLITransport.__init__
+        if not hasattr(SubprocessCLITransport, '_original_write'):
             SubprocessCLITransport._original_write = SubprocessCLITransport.write
             SubprocessCLITransport._original_read_messages = SubprocessCLITransport.read_messages
 
         interceptor = self
 
-        # Patch __init__ to inject memory into system prompt
-        def patched_init(self, *args, **kwargs):
-            # Call original init first
-            SubprocessCLITransport._original_init(self, *args, **kwargs)
-
-            # Inject memory into system prompt if enabled
-            config = get_current_config()
-            if config:
-                interceptor._inject_memory_into_options(self._options, config)
-
-        # Patch write() to capture outgoing messages
+        # Patch write() to inject memory and capture outgoing messages
         async def patched_write(self, data: str):
+            # Inject memory on first write (before any messages are sent)
+            if not hasattr(self, '_memory_injected'):
+                config = get_current_config()
+                if config:
+                    await interceptor._inject_memory_async(self._options, config)
+                    self._memory_injected = True
+
             # Capture user message
             config = get_current_config()
             if config:
@@ -81,12 +77,10 @@ class ClaudeInterceptor(BaseInterceptor):
                 return original_iterator
 
         # Apply patches
-        SubprocessCLITransport.__init__ = patched_init
         SubprocessCLITransport.write = patched_write
         SubprocessCLITransport.read_messages = patched_read_messages
 
         # Store for uninstall
-        self._original_methods['init'] = SubprocessCLITransport._original_init
         self._original_methods['write'] = SubprocessCLITransport._original_write
         self._original_methods['read_messages'] = SubprocessCLITransport._original_read_messages
 
@@ -97,8 +91,6 @@ class ClaudeInterceptor(BaseInterceptor):
         except ImportError:
             return
 
-        if 'init' in self._original_methods:
-            SubprocessCLITransport.__init__ = self._original_methods['init']
         if 'write' in self._original_methods:
             SubprocessCLITransport.write = self._original_methods['write']
         if 'read_messages' in self._original_methods:
@@ -120,9 +112,12 @@ class ClaudeInterceptor(BaseInterceptor):
     # Claude SDK-specific helper methods
     # =========================================================================
 
-    def _inject_memory_into_options(self, options, config: dict):
+    async def _inject_memory_async(self, options, config: dict):
         """
-        Inject memory into the Claude Agent options system prompt.
+        Inject memory into Claude Agent options.
+
+        This is called from patched_write() on first write (during client.connect()).
+        Uses the user's client (async or sync) to retrieve memory context.
 
         Args:
             options: ClaudeAgentOptions instance
@@ -139,16 +134,8 @@ class ClaudeInterceptor(BaseInterceptor):
             return
 
         try:
-            # Get memory context - check if it's an async method
-            retrieve_method = client.memory.context.retrieve
-
-            # If it's an async method (returns a coroutine), we can't call it from __init__
-            # Skip memory injection for async clients
-            import inspect
-            if inspect.iscoroutinefunction(retrieve_method):
-                return
-
-            memory_context = retrieve_method(agent=agent_name)
+            # Retrieve memory context (await if async client)
+            memory_context = await client.memory.context.retrieve(agent=agent_name)
 
             if not memory_context:
                 return
@@ -238,25 +225,15 @@ class ClaudeInterceptor(BaseInterceptor):
 
             # Only save if we have at least one message
             if user_message or assistant_message:
-                # Save conversation turn (await to ensure ordering)
+                # Save conversation turn
                 from .utils import _save_conversation_turn_async
-                try:
-                    save_task = _save_conversation_turn_async(
-                        provider=self.PROVIDER,
-                        model="claude",
-                        request_messages=self.build_request_messages(user_message) if user_message else [],
-                        response_dict={"role": "assistant", "content": assistant_message} if assistant_message else {"role": "assistant", "content": ""}
-                    )
 
-                    # Store task in config so context manager can await it
-                    if "pending_save_tasks" not in config:
-                        config["pending_save_tasks"] = []
-                    config["pending_save_tasks"].append(save_task)
-
-                    # Await the task to ensure it completes before iterator finishes
-                    await save_task
-                except Exception:
-                    pass
+                await _save_conversation_turn_async(
+                    provider=self.PROVIDER,
+                    model="claude",
+                    request_messages=self.build_request_messages(user_message) if user_message else [],
+                    response_dict={"role": "assistant", "content": assistant_message} if assistant_message else {"role": "assistant", "content": ""}
+                )
 
                 # Clear the buffer
                 config["pending_user_message"] = None
