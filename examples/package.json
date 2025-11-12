@@ -21,6 +21,6 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.1",
     "@google/generative-ai": "^0.24.1",
-    "@letta-ai/agentic-learning": "^0.2.2"
+    "@letta-ai/agentic-learning": "^0.3.0"
   }
 }
