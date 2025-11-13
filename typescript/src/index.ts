@@ -21,22 +21,3 @@ export type { Agent, CreateAgentOptions } from './client/agents/client';
 export type { MemoryBlock, CreateMemoryOptions } from './client/memory/client';
 export type { Message, ListMessagesOptions } from './client/messages/client';
 
-/**
- * Enable interception for an Anthropic client instance
- *
- * Due to module resolution issues with ts-node, call this after creating your Anthropic client:
- * ```
- * import Anthropic from '@anthropic-ai/sdk';
- * import { enableAnthropicInterception } from '@letta/agentic-learning';
- *
- * const client = new Anthropic({ apiKey });
- * enableAnthropicInterception(client);
- * ```
- */
-export function enableAnthropicInterception(client: any): void {
-  if ((global as any).__ANTHROPIC_INTERCEPTOR__) {
-    (global as any).__ANTHROPIC_INTERCEPTOR__.lazyInstall(client);
-  } else {
-    console.warn('[AgenticLearning] Anthropic interceptor not found. Make sure to call install() first.');
-  }
-}

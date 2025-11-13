@@ -17,50 +17,83 @@ export class AnthropicInterceptor extends BaseAPIInterceptor {
    * Check if Anthropic SDK is available
    */
   isAvailable(): boolean {
+    // Check if SDK can be required
     try {
       require('@anthropic-ai/sdk');
       return true;
     } catch {
-      return false;
+      // Can't require directly, but might be loaded by user's code
+      // Check module cache as fallback
+      try {
+        const Module = require('module');
+        const cache = (Module as any)._cache || require.cache;
+        return Object.keys(cache).some(k => k.includes('@anthropic-ai/sdk'));
+      } catch {
+        return false;
+      }
     }
   }
 
   /**
    * Install interceptor by patching Anthropic SDK methods
    *
-   * NOTE: Due to CommonJS/ES6 module resolution differences in ts-node,
-   * we use a lazy patching strategy that patches the first time a client
-   * is created.
+   * Strategy: Check Node's module cache for already-loaded @anthropic-ai/sdk
+   * and patch that instance. This works around ES modules vs CommonJS issues.
    */
   install(): void {
-    // Set up a flag to track if we've patched
-    (global as any).__ANTHROPIC_INTERCEPTOR_INSTALLED__ = false;
+    // Strategy 1: Check if @anthropic-ai/sdk is already loaded in the module cache
+    try {
+      const Module = require('module');
+      const cache = (Module as any)._cache || require.cache;
 
-    // Store interceptor instance globally so the patch can access it
-    (global as any).__ANTHROPIC_INTERCEPTOR__ = this;
+      // Look for any cached @anthropic-ai/sdk modules
+      for (const key of Object.keys(cache)) {
+        if (key.includes('@anthropic-ai/sdk') && key.includes('index')) {
+          const cachedModule = cache[key];
+          if (cachedModule && cachedModule.exports) {
+            // Try to patch the cached module's exports
+            const Anthropic = cachedModule.exports.default || cachedModule.exports.Anthropic;
+            if (Anthropic) {
+              if (this.tryPatchAnthropic(Anthropic)) {
+                (global as any).__ANTHROPIC_INTERCEPTOR_REGISTERED__ = this;
+                return;
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Cache strategy failed, try fallback
+    }
+
+    // Strategy 2: Try require() as fallback
+    try {
+      const AnthropicModule = require('@anthropic-ai/sdk');
+      const Anthropic = AnthropicModule.default || AnthropicModule.Anthropic;
+      if (Anthropic) {
+        this.tryPatchAnthropic(Anthropic);
+      }
+    } catch (error) {
+      // Fallback failed
+    }
+
+    // Store for manual patching fallback
+    (global as any).__ANTHROPIC_INTERCEPTOR_REGISTERED__ = this;
   }
 
   /**
-   * Lazy install - called when we detect an Anthropic client
-   *
-   * Call this with your Anthropic client instance to enable interception:
-   * ```
-   * const client = new Anthropic({ apiKey });
-   * (global as any).__ANTHROPIC_INTERCEPTOR__?.lazyInstall?.(client);
-   * ```
+   * Try to patch an Anthropic constructor
    */
-  public lazyInstall(client: any): void {
-    // Check if already patched
-    if ((global as any).__ANTHROPIC_INTERCEPTOR_INSTALLED__) {
-      return;
-    }
-
+  private tryPatchAnthropic(Anthropic: any): boolean {
     try {
-      const MessagesClass = client.messages.constructor;
+      const tempClient = new Anthropic({ apiKey: 'dummy-key' });
+      const MessagesClass = tempClient.messages.constructor;
 
       if (MessagesClass && MessagesClass.prototype?.create) {
         // Save original method
-        this.originalMethods.set('messages.create', MessagesClass.prototype.create);
+        if (!this.originalMethods.has('messages.create')) {
+          this.originalMethods.set('messages.create', MessagesClass.prototype.create);
+        }
 
         // Patch the create method
         const self = this;
@@ -72,15 +105,14 @@ export class AnthropicInterceptor extends BaseAPIInterceptor {
           return self.interceptCreate(this, params, options);
         };
 
-        (global as any).__ANTHROPIC_INTERCEPTOR_INSTALLED__ = true;
+        return true;
       }
     } catch (error) {
-      // Silently fail if patching doesn't work
-      if (process.env.DEBUG_AGENTIC_LEARNING) {
-        console.error('[Anthropic] Lazy install failed:', error);
-      }
+      // Patching failed
     }
+    return false;
   }
+
 
   /**
    * Uninstall interceptor and restore original methods
