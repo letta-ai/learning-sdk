@@ -12,7 +12,7 @@ with learning(agent="my_agent"):
     response = client.chat.completions.create(...)  # LLM is now stateful!
 ```
 
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![pypi](https://img.shields.io/pypi/v/agentic-learning)](https://pypi.python.org/pypi/agentic-learning)
 [![npm shield](https://img.shields.io/npm/v/@letta-ai/agentic-learning)](https://www.npmjs.com/package/@letta-ai/agentic-learning)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
