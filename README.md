@@ -1,6 +1,6 @@
 # Learning SDK
 
-Add Continual learning and long-term memory to any LLM agent with one line of code. This SDK enables agents to learn from every conversation and recall context across sessions—making any agent across any platform stateful.
+Add continual learning and long-term memory to any LLM agent with one line of code. This SDK enables agents to learn from every conversation and recall context across sessions—making any agent across any platform stateful.
 
 ```python
 from openai import OpenAI
