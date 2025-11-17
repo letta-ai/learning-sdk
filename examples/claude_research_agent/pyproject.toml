@@ -1,0 +1,17 @@
+[project]
+name = "multi-agent-research"
+version = "0.1.0"
+description = "Simple multi-agent research system using Claude Agents SDK with Agentic Learning"
+requires-python = ">=3.10"
+dependencies = [
+    "claude-agent-sdk>=0.1.37",
+    "agentic-learning>=0.4.1",
+    "python-dotenv>=1.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["research_agent*"]
