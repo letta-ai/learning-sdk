@@ -134,34 +134,55 @@ async def _save_conversation_turn_async(
 
     async def save_task():
         try:
-            import asyncio
-            loop = asyncio.get_event_loop()
+            # Check if client is async or sync
+            is_async = hasattr(client, '__class__') and 'Async' in client.__class__.__name__
 
-            # Get or create agent using sync client in thread pool
-            agent_state = await loop.run_in_executor(
-                None,
-                lambda: client.agents.retrieve(agent=agent)
-            )
+            if is_async:
+                # Async client - await directly
+                agent_state = await client.agents.retrieve(agent=agent)
 
-            if not agent_state:
-                agent_state = await loop.run_in_executor(
-                    None,
-                    lambda: client.agents.create(
+                if not agent_state:
+                    agent_state = await client.agents.create(
                         agent=agent,
                         memory=memory,
                     )
-                )
 
-            return await loop.run_in_executor(
-                None,
-                lambda: client.messages.capture(
+                return await client.messages.capture(
                     agent=agent,
                     request_messages=request_messages or [],
                     response_dict=response_dict or {},
                     model=model,
                     provider=provider,
                 )
-            )
+            else:
+                # Sync client - run in executor
+                import asyncio
+                loop = asyncio.get_event_loop()
+
+                agent_state = await loop.run_in_executor(
+                    None,
+                    lambda: client.agents.retrieve(agent=agent)
+                )
+
+                if not agent_state:
+                    agent_state = await loop.run_in_executor(
+                        None,
+                        lambda: client.agents.create(
+                            agent=agent,
+                            memory=memory,
+                        )
+                    )
+
+                return await loop.run_in_executor(
+                    None,
+                    lambda: client.messages.capture(
+                        agent=agent,
+                        request_messages=request_messages or [],
+                        response_dict=response_dict or {},
+                        model=model,
+                        provider=provider,
+                    )
+                )
 
         except Exception as e:
             import sys
