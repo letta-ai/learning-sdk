@@ -1,0 +1,4 @@
+agentic-learning>=0.4.0
+crewai>=0.11.0
+crewai-tools>=0.4.0
+openai>=1.0.0
