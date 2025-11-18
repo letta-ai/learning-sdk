@@ -38,6 +38,9 @@ class AgenticLearning:
         self._letta = Letta(
             api_key=api_key,
             base_url=self.base_url,
+            default_headers={
+                "X-Letta-Source": "learning-sdk",
+            },
         )
 
         self.agents = AgentsClient(self, self._letta)

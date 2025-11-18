@@ -47,6 +47,9 @@ export class AgenticLearning {
     this.letta = new Letta({
       baseURL: this.baseUrl,
       apiKey: apiKey || undefined,
+      defaultHeaders: {
+        'X-Letta-Source': 'learning-sdk',
+      },
     });
 
     // Initialize sub-clients
