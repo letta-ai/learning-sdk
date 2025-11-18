@@ -1,4 +1,3 @@
-import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { HookJSONOutput } from "@anthropic-ai/claude-agent-sdk";
 import * as path from "path";
 import { learning } from '@letta-ai/agentic-learning';
@@ -6,6 +5,9 @@ import { learning } from '@letta-ai/agentic-learning';
 async function main() {
   // Wrap the query in learning context to enable persistent memory
   await learning({ agent: 'claude-hello-world-demo' }, async () => {
+    // IMPORTANT: Use require() here (not import at top) for memory injection to work
+    const { query } = require("@anthropic-ai/claude-agent-sdk");
+
     const q = query({
       prompt: 'Hello, Claude! Please introduce yourself in one sentence.',
       options: {

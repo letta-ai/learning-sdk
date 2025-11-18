@@ -1,4 +1,3 @@
-import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { HookJSONOutput } from "@anthropic-ai/claude-agent-sdk";
 import * as path from "path";
 import { learning } from "@letta-ai/agentic-learning";
@@ -88,6 +87,9 @@ export class AIClient {
 
     // Wrap the query in learning context to enable persistent memory
     await learning({ agent: 'claude-email-agent-demo' }, async () => {
+      // IMPORTANT: Use require() here (not import at top) for memory injection to work
+      const { query } = require("@anthropic-ai/claude-agent-sdk");
+      
       for await (const message of query({
         prompt,
         options: mergedOptions

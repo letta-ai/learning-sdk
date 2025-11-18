@@ -40,11 +40,13 @@ The `agent` directory is used as the working directory for the Claude agent, and
 To enable persistent memory, simply wrap your `query()` call with the `learning()` context:
 
 ```typescript
-import { query } from '@anthropic-ai/claude-agent-sdk';
 import { learning } from '@letta-ai/agentic-learning';
 
 // Wrap your query in learning context
 await learning({ agent: 'claude-hello-world-demo' }, async () => {
+  // IMPORTANT: Use require() here (not import at top) for memory injection to work
+  const { query } = require("@anthropic-ai/claude-agent-sdk");
+
   const q = query({
     prompt: 'Your prompt here',
     options: { /* configuration */ }

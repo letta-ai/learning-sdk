@@ -8,7 +8,7 @@
  * When running `npm run build` or `npm run build:main`, this file is compiled to
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
-import { query, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+import { type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { learning } from '@letta-ai/agentic-learning';
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import log from 'electron-log';
@@ -184,6 +184,9 @@ ipcMain.on(
 
       // Wrap the query in learning context to enable persistent memory
       await learning({ agent: 'claude-excel-demo' }, async () => {
+        // IMPORTANT: Use require() here (not import at top) for memory injection to work
+        const { query } = require("@anthropic-ai/claude-agent-sdk");
+
         const queryIterator = query({
           prompt,
           options: {
