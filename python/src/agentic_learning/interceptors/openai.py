@@ -205,7 +205,7 @@ class OpenAIInterceptor(BaseAPIInterceptor):
         
         if response and hasattr(response, 'model'):
             return response.model
-        return 'gpt-4o-mini'
+        return 'gpt-5'  # Fallback default
 
     def _build_response_from_chunks(self, chunks: list) -> Any:
         """
@@ -215,7 +215,7 @@ class OpenAIInterceptor(BaseAPIInterceptor):
         Responses API: chunk.output_delta or chunk.delta
         """
         texts = []
-        model_name = 'gpt-4o-mini'
+        model_name = 'gpt-5'
         is_responses_api = False
 
         for chunk in chunks:
@@ -265,7 +265,7 @@ class OpenAIInterceptor(BaseAPIInterceptor):
     def extract_assistant_message_streaming(self, stream: Generator) -> Generator:
         """Wrap streaming response to collect chunks."""
         user_message = getattr(stream, '_learning_user_message', None)
-        model_name = getattr(stream, '_learning_model_name', 'gpt-4o-mini')
+        model_name = getattr(stream, '_learning_model_name', 'gpt-5')
 
         def save_collected(chunks):
             """Callback to save collected chunks."""
@@ -278,7 +278,7 @@ class OpenAIInterceptor(BaseAPIInterceptor):
     ) -> AsyncGenerator:
         """Wrap async streaming response to collect chunks."""
         user_message = getattr(stream, '_learning_user_message', None)
-        model_name = getattr(stream, '_learning_model_name', 'gpt-4o-mini')
+        model_name = getattr(stream, '_learning_model_name', 'gpt-5')
 
         async def save_collected(chunks):
             """Callback to save collected chunks."""
