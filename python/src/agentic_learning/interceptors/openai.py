@@ -121,10 +121,8 @@ class OpenAIInterceptor(BaseAPIInterceptor):
         """Extract assistant message from non-streaming response (both APIs)."""
         # Unwrap APIResponse if needed (Langchain wraps responses)
         if hasattr(response, 'parse'):
-            # This is an APIResponse wrapper - get the actual response
             try:
                 response = response.parse()
-                print(f"[SDK] Unwrapped APIResponse to {type(response)}", file=sys.stderr)
             except:
                 pass
 
@@ -150,15 +148,9 @@ class OpenAIInterceptor(BaseAPIInterceptor):
         # Chat Completions format: response.choices[0].message.content
         if hasattr(response, 'choices') and response.choices:
             choice = response.choices[0]
-            print(f"[SDK DEBUG] Choice: {choice}", file=sys.stderr)
-            if hasattr(choice, 'message'):
-                print(f"[SDK DEBUG] Message: {choice.message}", file=sys.stderr)
-                if hasattr(choice.message, 'content'):
-                    content = choice.message.content
-                    print(f"[SDK DEBUG] Content: {content!r}", file=sys.stderr)
-                    return content or ""
+            if hasattr(choice, 'message') and hasattr(choice.message, 'content'):
+                return choice.message.content or ""
 
-        print(f"[SDK DEBUG] No content found, returning empty string", file=sys.stderr)
         return ""
 
     def build_request_messages(self, user_message: str) -> list:
@@ -197,17 +189,9 @@ class OpenAIInterceptor(BaseAPIInterceptor):
             choice = response.choices[0]
             if hasattr(choice, 'message') and hasattr(choice.message, 'content'):
                 content = choice.message.content
-                # DEBUG: Log if content is None or empty
-                if content is None or content == "":
-                    import sys
-                    print(f"[SDK WARNING] OpenAI returned None/empty content: {content!r}", file=sys.stderr)
-                    print(f"[SDK WARNING] Response object: {response}", file=sys.stderr)
-                    print(f"[SDK WARNING] Choice: {choice}", file=sys.stderr)
                 return {"role": "assistant", "content": content or ""}
 
-        # Fallback - this shouldn't happen
-        import sys
-        print(f"[SDK WARNING] Could not extract assistant message from response: {response}", file=sys.stderr)
+        # Fallback
         return {"role": "assistant", "content": ""}
 
     def extract_model_name(self, response: Any = None, model_self: Any = None) -> str:
@@ -221,7 +205,7 @@ class OpenAIInterceptor(BaseAPIInterceptor):
         
         if response and hasattr(response, 'model'):
             return response.model
-        return 'gpt-4o-mini'  # Fallback default (changed from gpt-5)
+        return 'gpt-4o-mini'
 
     def _build_response_from_chunks(self, chunks: list) -> Any:
         """
@@ -294,7 +278,7 @@ class OpenAIInterceptor(BaseAPIInterceptor):
     ) -> AsyncGenerator:
         """Wrap async streaming response to collect chunks."""
         user_message = getattr(stream, '_learning_user_message', None)
-        model_name = getattr(stream, '_learning_model_name', 'gpt-5')
+        model_name = getattr(stream, '_learning_model_name', 'gpt-4o-mini')
 
         async def save_collected(chunks):
             """Callback to save collected chunks."""
