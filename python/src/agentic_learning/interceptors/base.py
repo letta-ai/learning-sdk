@@ -456,18 +456,24 @@ class BaseAPIInterceptor(BaseInterceptor):
             else:
                 # Non-streaming - extract and save immediately
                 model_name = interceptor.extract_model_name(response=response, model_self=self_arg)
+                response_dict = interceptor.build_response_dict(response=response)
 
-                from .utils import _save_conversation_turn
-                try:
-                    _save_conversation_turn(
-                        provider=interceptor.PROVIDER,
-                        model=model_name,
-                        request_messages=interceptor.build_request_messages(user_message),
-                        response_dict=interceptor.build_response_dict(response=response)
-                    )
-                except Exception as e:
+                # Only save if there's actual content (skip tool-call-only messages with no content)
+                if response_dict.get("content"):
+                    from .utils import _save_conversation_turn
+                    try:
+                        _save_conversation_turn(
+                            provider=interceptor.PROVIDER,
+                            model=model_name,
+                            request_messages=interceptor.build_request_messages(user_message),
+                            response_dict=response_dict
+                        )
+                    except Exception as e:
+                        import sys
+                        print(f"[Warning] Failed to save conversation: {e}", file=sys.stderr)
+                else:
                     import sys
-                    print(f"[Warning] Failed to save conversation: {e}", file=sys.stderr)
+                    print(f"[Learning SDK] Skipping empty assistant message (likely tool call only)", file=sys.stderr)
 
                 return response
 
@@ -517,18 +523,24 @@ class BaseAPIInterceptor(BaseInterceptor):
             else:
                 # Non-streaming - extract and save immediately
                 model_name = interceptor.extract_model_name(response=response, model_self=self_arg)
+                response_dict = interceptor.build_response_dict(response=response)
 
-                from .utils import _save_conversation_turn_async
-                try:
-                    await _save_conversation_turn_async(
-                        provider=interceptor.PROVIDER,
-                        model=model_name,
-                        request_messages=interceptor.build_request_messages(user_message),
-                        response_dict=interceptor.build_response_dict(response=response)
-                    )
-                except Exception as e:
+                # Only save if there's actual content (skip tool-call-only messages with no content)
+                if response_dict.get("content"):
+                    from .utils import _save_conversation_turn_async
+                    try:
+                        await _save_conversation_turn_async(
+                            provider=interceptor.PROVIDER,
+                            model=model_name,
+                            request_messages=interceptor.build_request_messages(user_message),
+                            response_dict=response_dict
+                        )
+                    except Exception as e:
+                        import sys
+                        print(f"[Warning] Failed to save conversation: {e}", file=sys.stderr)
+                else:
                     import sys
-                    print(f"[Warning] Failed to save conversation: {e}", file=sys.stderr)
+                    print(f"[SDK] Skipping empty assistant message (likely tool call only)", file=sys.stderr)
 
                 return response
 
