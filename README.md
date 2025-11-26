@@ -110,7 +110,21 @@ await learning({ agent: "my_assistant" }, async () => {
 | **LangChain** | `https://github.com/langchain-ai` | ⚠️ Experimental | [main.py](examples/langchain_demo.py) |  |
 | **Vercel AI SDK** | `ai` | ✅ Stable | N/A (TS only) | [vercel_example.ts](examples/vercel_example.ts) |
 
-[Create an issue](https://github.com/letta-ai/agentic-learning-sdk/issues) to request support for another provider, or contribute a PR.
+[Create an issue](https://github.com/letta-ai/agentic-learning-sdk/issues) to request support for another provider, or contribute a PR:
+
+### Adding a New Provider
+
+1. Create a new interceptor in `python/src/agentic_learning/interceptors/`
+2. Extend `BaseAPIInterceptor` (for API-level) or `BaseInterceptor` (for transport-level)
+3. Implement SDK-specific methods:
+   - `extract_user_messages()`
+   - `extract_assistant_message()`
+   - `inject_memory_context()`
+   - `_build_response_from_chunks()`
+4. Register in `__init__.py`
+5. Add example to `examples/`
+
+See existing interceptors for reference implementations.
 
 ## Core Concepts
 
@@ -395,20 +409,6 @@ Both test suites cover all supported providers and validate:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-### Adding a New Provider
-
-1. Create a new interceptor in `python/src/agentic_learning/interceptors/`
-2. Extend `BaseAPIInterceptor` (for API-level) or `BaseInterceptor` (for transport-level)
-3. Implement SDK-specific methods:
-   - `extract_user_messages()`
-   - `extract_assistant_message()`
-   - `inject_memory_context()`
-   - `_build_response_from_chunks()`
-4. Register in `__init__.py`
-5. Add example to `examples/`
-
-See existing interceptors for reference implementations.
 
 ## License
 
