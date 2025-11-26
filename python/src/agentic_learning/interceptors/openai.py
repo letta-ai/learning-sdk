@@ -4,7 +4,6 @@ OpenAI Interceptor
 Interceptor for OpenAI SDK (chat.completions and responses APIs).
 """
 
-import sys
 from typing import Any, AsyncGenerator, Generator
 
 from .base import BaseAPIInterceptor
