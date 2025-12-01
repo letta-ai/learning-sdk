@@ -106,9 +106,25 @@ await learning({ agent: "my_assistant" }, async () => {
 | **OpenAI Chat Completions** | `openai` | ✅ Stable | [openai_example.py](examples/openai_example.py) | [openai_example.ts](examples/openai_example.ts) |
 | **OpenAI Responses API** | `openai` | ✅ Stable | [openai_responses_example.py](examples/openai_responses_example.py) | [openai_responses_example.ts](examples/openai_responses_example.ts) |
 | **Gemini** | `google-generativeai` | ✅ Stable | [gemini_example.py](examples/gemini_example.py) | [gemini_example.ts](examples/gemini_example.ts) |
+| **CrewAI** | `https://github.com/crewAIInc/crewAI` | ⚠️ Experimental | [crewai_research_demo.py](examples/crewai_demo/crewai_research_demo.py) |  |
+| **LangChain** | `https://github.com/langchain-ai` | ⚠️ Experimental | [main.py](examples/langchain_demo.py) |  |
 | **Vercel AI SDK** | `ai` | ✅ Stable | N/A (TS only) | [vercel_example.ts](examples/vercel_example.ts) |
 
-[Create an issue](https://github.com/letta-ai/agentic-learning-sdk/issues) to request support for another provider, or contribute a PR.
+[Create an issue](https://github.com/letta-ai/agentic-learning-sdk/issues) to request support for another provider, or contribute a PR:
+
+### Adding a New Provider
+
+1. Create a new interceptor in `python/src/agentic_learning/interceptors/`
+2. Extend `BaseAPIInterceptor` (for API-level) or `BaseInterceptor` (for transport-level)
+3. Implement SDK-specific methods:
+   - `extract_user_messages()`
+   - `extract_assistant_message()`
+   - `inject_memory_context()`
+   - `_build_response_from_chunks()`
+4. Register in `__init__.py`
+5. Add example to `examples/`
+
+See existing interceptors for reference implementations.
 
 ## Core Concepts
 
@@ -393,20 +409,6 @@ Both test suites cover all supported providers and validate:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-### Adding a New Provider
-
-1. Create a new interceptor in `python/src/agentic_learning/interceptors/`
-2. Extend `BaseAPIInterceptor` (for API-level) or `BaseInterceptor` (for transport-level)
-3. Implement SDK-specific methods:
-   - `extract_user_messages()`
-   - `extract_assistant_message()`
-   - `inject_memory_context()`
-   - `_build_response_from_chunks()`
-4. Register in `__init__.py`
-5. Add example to `examples/`
-
-See existing interceptors for reference implementations.
 
 ## License
 

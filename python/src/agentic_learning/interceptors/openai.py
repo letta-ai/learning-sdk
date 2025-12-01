@@ -118,6 +118,13 @@ class OpenAIInterceptor(BaseAPIInterceptor):
 
     def extract_assistant_message(self, response: Any) -> str:
         """Extract assistant message from non-streaming response (both APIs)."""
+        # Unwrap APIResponse if needed (Langchain wraps responses)
+        if hasattr(response, 'parse'):
+            try:
+                response = response.parse()
+            except:
+                pass
+
         # Responses API format: response.output
         if hasattr(response, 'output'):
             output = response.output
@@ -151,6 +158,13 @@ class OpenAIInterceptor(BaseAPIInterceptor):
 
     def build_response_dict(self, response: Any) -> dict:
         """Build response dict for Letta from response (both APIs)."""
+        # Unwrap APIResponse if needed (Langchain wraps responses)
+        if hasattr(response, 'parse'):
+            try:
+                response = response.parse()
+            except:
+                pass
+        
         # Responses API format
         if hasattr(response, 'output'):
             output = response.output
@@ -173,12 +187,21 @@ class OpenAIInterceptor(BaseAPIInterceptor):
         if hasattr(response, 'choices') and response.choices:
             choice = response.choices[0]
             if hasattr(choice, 'message') and hasattr(choice.message, 'content'):
-                return {"role": "assistant", "content": choice.message.content or ""}
+                content = choice.message.content
+                return {"role": "assistant", "content": content or ""}
 
+        # Fallback
         return {"role": "assistant", "content": ""}
 
     def extract_model_name(self, response: Any = None, model_self: Any = None) -> str:
         """Extract model name from OpenAI response."""
+        # Unwrap APIResponse if needed
+        if response and hasattr(response, 'parse'):
+            try:
+                response = response.parse()
+            except:
+                pass
+        
         if response and hasattr(response, 'model'):
             return response.model
         return 'gpt-5'  # Fallback default
