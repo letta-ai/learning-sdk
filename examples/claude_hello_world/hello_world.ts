@@ -1,4 +1,5 @@
 import type { HookJSONOutput } from "@anthropic-ai/claude-agent-sdk";
+import * as fs from "fs";
 import * as path from "path";
 import { learning } from '@letta-ai/agentic-learning';
 
@@ -8,13 +9,17 @@ async function main() {
     // IMPORTANT: Use require() here (not import at top) for memory injection to work
     const { query } = require("@anthropic-ai/claude-agent-sdk");
 
+    // Ensure the agent working directory exists
+    const agentCwd = path.join(process.cwd(), 'agent');
+    fs.mkdirSync(agentCwd, { recursive: true });
+
     const q = query({
       prompt: 'Hello, Claude! Please introduce yourself in one sentence.',
       options: {
         maxTurns: 100,
-        cwd: path.join(process.cwd(), 'agent'),
+        cwd: agentCwd,
         model: "opus",
-        executable: "node", // Use the current node binary path
+        executable: process.execPath, // Use the current node binary path
         allowedTools: [
           "Task", "Bash", "Glob", "Grep", "LS", "ExitPlanMode", "Read", "Edit", "MultiEdit", "Write", "NotebookEdit",
           "WebFetch", "TodoWrite", "WebSearch", "BashOutput", "KillBash"
