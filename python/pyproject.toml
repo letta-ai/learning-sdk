@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agentic-learning"
-version = "0.4.2"
+version = "0.4.3"
 description = "Drop-in SDK to add an AI memory layer to any application. Works with OpenAI, Anthropic, Gemini, Claude."
 readme = "README.md"
 requires-python = ">=3.10"
