@@ -40,8 +40,8 @@ export class AgenticLearning {
     // Check for API key in environment if not provided
     const apiKey = options.apiKey || process.env.LETTA_API_KEY;
 
-    // Use provided base URL or environment; underlying client will handle its own default if unset
-    this.baseUrl = options.baseUrl || process.env.LETTA_BASE_URL;
+    // Use provided base URL or environment, falling back to cloud default
+    this.baseUrl = options.baseUrl ?? process.env.LETTA_BASE_URL ?? '';
 
     // Create underlying Letta client
     this.letta = new Letta({
