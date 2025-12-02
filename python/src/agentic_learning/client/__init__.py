@@ -40,7 +40,7 @@ class AgenticLearning:
             api_key=self.api_key,
             base_url=self.base_url,
             default_headers={
-                "X-Letta-Source": "learning-sdk",
+                "X-Letta-Source": "learning-sdk-python",
             },
         )
 
@@ -82,7 +82,7 @@ class AsyncAgenticLearning:
             api_key=self.api_key,
             base_url=self.base_url,
             default_headers={
-                "X-Letta-Source": "learning-sdk",
+                "X-Letta-Source": "learning-sdk-python",
             },
         )
 

@@ -48,7 +48,7 @@ export class AgenticLearning {
       baseURL: this.baseUrl,
       apiKey: apiKey || undefined,
       defaultHeaders: {
-        'X-Letta-Source': 'learning-sdk',
+        'X-Letta-Source': 'learning-sdk-node',
       },
     });
 
