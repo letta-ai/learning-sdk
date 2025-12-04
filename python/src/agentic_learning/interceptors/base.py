@@ -316,7 +316,13 @@ class BaseAPIInterceptor(BaseInterceptor):
             return kwargs
 
         try:
-            memory_context = await client.memory.context.retrieve(agent=agent_name)
+            import inspect
+            result = client.memory.context.retrieve(agent=agent_name)
+            # Handle both sync and async clients
+            if inspect.iscoroutine(result):
+                memory_context = await result
+            else:
+                memory_context = result
             if memory_context:
                 kwargs = self.inject_memory_context(kwargs, memory_context)
         except Exception as e:
