@@ -43,6 +43,16 @@ class AnthropicInterceptor(BaseAPIInterceptor):
         Messages.create = self.intercept(self._original_methods['messages_create'])
         AsyncMessages.create = self.intercept_async(self._original_methods['async_messages_create'])
 
+        # Also patch beta.messages (used by PydanticAI and others)
+        try:
+            from anthropic.resources.beta.messages import Messages as BetaMessages, AsyncMessages as AsyncBetaMessages
+            self._original_methods['beta_messages_create'] = BetaMessages.create
+            self._original_methods['async_beta_messages_create'] = AsyncBetaMessages.create
+            BetaMessages.create = self.intercept(self._original_methods['beta_messages_create'])
+            AsyncBetaMessages.create = self.intercept_async(self._original_methods['async_beta_messages_create'])
+        except ImportError:
+            pass
+
     def uninstall(self):
         """Uninstall interceptor and restore original methods."""
         try:
@@ -54,6 +64,16 @@ class AnthropicInterceptor(BaseAPIInterceptor):
             Messages.create = self._original_methods['messages_create']
         if 'async_messages_create' in self._original_methods:
             AsyncMessages.create = self._original_methods['async_messages_create']
+
+        # Restore beta.messages
+        try:
+            from anthropic.resources.beta.messages import Messages as BetaMessages, AsyncMessages as AsyncBetaMessages
+            if 'beta_messages_create' in self._original_methods:
+                BetaMessages.create = self._original_methods['beta_messages_create']
+            if 'async_beta_messages_create' in self._original_methods:
+                AsyncBetaMessages.create = self._original_methods['async_beta_messages_create']
+        except ImportError:
+            pass
 
     def extract_user_messages(self, *args, **kwargs) -> str:
         """
