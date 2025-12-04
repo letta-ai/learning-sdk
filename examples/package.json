@@ -24,7 +24,7 @@
     "@anthropic-ai/claude-agent-sdk": "^0.1.37",
     "@anthropic-ai/sdk": "^0.67.1",
     "@google/generative-ai": "^0.24.1",
-    "@letta-ai/agentic-learning": "^0.3.0",
+    "@letta-ai/agentic-learning": "file:../typescript",
     "ai": "^5.0.93",
     "zod": "^3.25.76"
   }
