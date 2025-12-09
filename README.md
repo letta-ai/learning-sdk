@@ -106,6 +106,7 @@ await learning({ agent: "my_assistant" }, async () => {
 | **OpenAI Chat Completions** | `openai` | ✅ Stable | [openai_example.py](examples/openai_example.py) | [openai_example.ts](examples/openai_example.ts) |
 | **OpenAI Responses API** | `openai` | ✅ Stable | [openai_responses_example.py](examples/openai_responses_example.py) | [openai_responses_example.ts](examples/openai_responses_example.ts) |
 | **Gemini** | `google-generativeai` | ✅ Stable | [gemini_example.py](examples/gemini_example.py) | [gemini_example.ts](examples/gemini_example.ts) |
+| **Pydantic AI** | `pydantic-ai` | ⚠️ Experimental | [pydantic_ai_example.py](examples/pydantic_ai_example.py) |  |
 | **CrewAI** | `https://github.com/crewAIInc/crewAI` | ⚠️ Experimental | [crewai_research_demo.py](examples/crewai_demo/crewai_research_demo.py) |  |
 | **LangChain** | `https://github.com/langchain-ai` | ⚠️ Experimental | [main.py](examples/langchain_demo.py) |  |
 | **Vercel AI SDK** | `ai` | ✅ Stable | N/A (TS only) | [vercel_example.ts](examples/vercel_example.ts) |
