@@ -99,7 +99,7 @@ class PydanticAIInterceptor(BaseInterceptor):
             # extract user message
             user_message = interceptor._extract_user_prompt(args, kwargs)
 
-            # inject memory context if enabled
+            # inject memory context via message_history if enabled
             if not config.get("capture_only", False):
                 client = config.get("client")
                 agent_name = config.get("agent_name")
@@ -114,12 +114,14 @@ class PydanticAIInterceptor(BaseInterceptor):
                             memory_context = result
 
                         if memory_context:
-                            # inject memory into system prompt
-                            current_system = kwargs.get("system_prompt", "")
-                            if current_system:
-                                kwargs["system_prompt"] = f"{memory_context}\n\n{current_system}"
-                            else:
-                                kwargs["system_prompt"] = memory_context
+                            # inject memory as a system message in history
+                            from pydantic_ai.messages import ModelRequest, SystemPromptPart
+
+                            memory_msg = ModelRequest(
+                                parts=[SystemPromptPart(content=f"[Memory Context]\n{memory_context}")]
+                            )
+                            existing_history = list(kwargs.get("message_history") or [])
+                            kwargs["message_history"] = [memory_msg] + existing_history
                     except Exception as e:
                         import sys
                         print(f"[warning] memory injection failed: {e}", file=sys.stderr)
@@ -163,7 +165,7 @@ class PydanticAIInterceptor(BaseInterceptor):
             # extract user message
             user_message = interceptor._extract_user_prompt(args, kwargs)
 
-            # inject memory context if enabled
+            # inject memory context via message_history if enabled
             if not config.get("capture_only", False):
                 client = config.get("client")
                 agent_name = config.get("agent_name")
@@ -172,12 +174,14 @@ class PydanticAIInterceptor(BaseInterceptor):
                     try:
                         memory_context = client.memory.context.retrieve(agent=agent_name)
                         if memory_context:
-                            # inject memory into system prompt
-                            current_system = kwargs.get("system_prompt", "")
-                            if current_system:
-                                kwargs["system_prompt"] = f"{memory_context}\n\n{current_system}"
-                            else:
-                                kwargs["system_prompt"] = memory_context
+                            # inject memory as a system message in history
+                            from pydantic_ai.messages import ModelRequest, SystemPromptPart
+
+                            memory_msg = ModelRequest(
+                                parts=[SystemPromptPart(content=f"[Memory Context]\n{memory_context}")]
+                            )
+                            existing_history = list(kwargs.get("message_history") or [])
+                            kwargs["message_history"] = [memory_msg] + existing_history
                     except Exception as e:
                         import sys
                         print(f"[warning] memory injection failed: {e}", file=sys.stderr)
