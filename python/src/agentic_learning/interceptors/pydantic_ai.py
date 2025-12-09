@@ -5,9 +5,13 @@ interceptor for pydantic-ai agent runs.
 """
 
 import functools
+import inspect
+import sys
 from typing import Any
 
 from .base import BaseInterceptor
+from .utils import _save_conversation_turn, _save_conversation_turn_async
+from ..core import get_current_config
 
 
 class PydanticAIInterceptor(BaseInterceptor):
@@ -61,13 +65,11 @@ class PydanticAIInterceptor(BaseInterceptor):
 
     def build_response_dict(self, response: Any) -> dict:
         """build response dict for letta from pydantic-ai result."""
-        # response is the output from AgentRunResult
         content = str(response) if response is not None else ""
         return {"role": "assistant", "content": content}
 
     def _extract_user_prompt(self, args, kwargs) -> str:
         """extract user prompt from run arguments."""
-        # first positional arg or 'user_prompt' kwarg
         if args:
             return str(args[0])
         return str(kwargs.get("user_prompt", ""))
@@ -83,30 +85,35 @@ class PydanticAIInterceptor(BaseInterceptor):
             return str(model)
         return "unknown"
 
+    def _inject_memory(self, kwargs: dict, memory_context: str) -> dict:
+        """inject memory context into kwargs via message_history."""
+        from pydantic_ai.messages import ModelRequest, SystemPromptPart
+
+        memory_msg = ModelRequest(
+            parts=[SystemPromptPart(content=f"[Memory Context]\n{memory_context}")]
+        )
+        existing_history = list(kwargs.get("message_history") or [])
+        kwargs["message_history"] = [memory_msg] + existing_history
+        return kwargs
+
     def _wrap_run(self, original_method):
         """wrap async run method."""
         interceptor = self
 
         @functools.wraps(original_method)
         async def wrapper(self_arg, *args, **kwargs):
-            from ..core import get_current_config
-
             config = get_current_config()
             if not config:
-                # no learning context active - pass through
                 return await original_method(self_arg, *args, **kwargs)
 
-            # extract user message
             user_message = interceptor._extract_user_prompt(args, kwargs)
 
-            # inject memory context via message_history if enabled
             if not config.get("capture_only", False):
                 client = config.get("client")
                 agent_name = config.get("agent_name")
 
                 if client and agent_name:
                     try:
-                        import inspect
                         result = client.memory.context.retrieve(agent=agent_name)
                         if inspect.iscoroutine(result):
                             memory_context = await result
@@ -114,26 +121,15 @@ class PydanticAIInterceptor(BaseInterceptor):
                             memory_context = result
 
                         if memory_context:
-                            # inject memory as a system message in history
-                            from pydantic_ai.messages import ModelRequest, SystemPromptPart
-
-                            memory_msg = ModelRequest(
-                                parts=[SystemPromptPart(content=f"[Memory Context]\n{memory_context}")]
-                            )
-                            existing_history = list(kwargs.get("message_history") or [])
-                            kwargs["message_history"] = [memory_msg] + existing_history
+                            kwargs = interceptor._inject_memory(kwargs, memory_context)
                     except Exception as e:
-                        import sys
                         print(f"[warning] memory injection failed: {e}", file=sys.stderr)
 
-            # call original method
             result = await original_method(self_arg, *args, **kwargs)
 
-            # save conversation
             model_name = interceptor._get_model_name(self_arg)
             output = result.output if hasattr(result, "output") else result
 
-            from .utils import _save_conversation_turn_async
             try:
                 await _save_conversation_turn_async(
                     provider=interceptor.PROVIDER,
@@ -142,7 +138,6 @@ class PydanticAIInterceptor(BaseInterceptor):
                     response_dict=interceptor.build_response_dict(output),
                 )
             except Exception as e:
-                import sys
                 print(f"[warning] failed to save conversation: {e}", file=sys.stderr)
 
             return result
@@ -155,17 +150,12 @@ class PydanticAIInterceptor(BaseInterceptor):
 
         @functools.wraps(original_method)
         def wrapper(self_arg, *args, **kwargs):
-            from ..core import get_current_config
-
             config = get_current_config()
             if not config:
-                # no learning context active - pass through
                 return original_method(self_arg, *args, **kwargs)
 
-            # extract user message
             user_message = interceptor._extract_user_prompt(args, kwargs)
 
-            # inject memory context via message_history if enabled
             if not config.get("capture_only", False):
                 client = config.get("client")
                 agent_name = config.get("agent_name")
@@ -174,26 +164,15 @@ class PydanticAIInterceptor(BaseInterceptor):
                     try:
                         memory_context = client.memory.context.retrieve(agent=agent_name)
                         if memory_context:
-                            # inject memory as a system message in history
-                            from pydantic_ai.messages import ModelRequest, SystemPromptPart
-
-                            memory_msg = ModelRequest(
-                                parts=[SystemPromptPart(content=f"[Memory Context]\n{memory_context}")]
-                            )
-                            existing_history = list(kwargs.get("message_history") or [])
-                            kwargs["message_history"] = [memory_msg] + existing_history
+                            kwargs = interceptor._inject_memory(kwargs, memory_context)
                     except Exception as e:
-                        import sys
                         print(f"[warning] memory injection failed: {e}", file=sys.stderr)
 
-            # call original method
             result = original_method(self_arg, *args, **kwargs)
 
-            # save conversation
             model_name = interceptor._get_model_name(self_arg)
             output = result.output if hasattr(result, "output") else result
 
-            from .utils import _save_conversation_turn
             try:
                 _save_conversation_turn(
                     provider=interceptor.PROVIDER,
@@ -202,7 +181,6 @@ class PydanticAIInterceptor(BaseInterceptor):
                     response_dict=interceptor.build_response_dict(output),
                 )
             except Exception as e:
-                import sys
                 print(f"[warning] failed to save conversation: {e}", file=sys.stderr)
 
             return result
