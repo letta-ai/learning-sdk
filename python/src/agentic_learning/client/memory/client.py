@@ -97,7 +97,7 @@ class MemoryClient:
                 agent=agent, label=label, value=value, description=description
             )
         else:
-            block = block[0]
+            block = blocks[0]
             block = self._letta.blocks.update(
                 block_id=block.id,
                 value=value or memory_placeholder(label),
