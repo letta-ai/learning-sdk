@@ -41,21 +41,26 @@ class ClaudeInterceptor(BaseInterceptor):
             return
 
         # Store original methods (only once)
+        if not hasattr(SubprocessCLITransport, '_original_connect'):
+            SubprocessCLITransport._original_connect = SubprocessCLITransport.connect
         if not hasattr(SubprocessCLITransport, '_original_write'):
             SubprocessCLITransport._original_write = SubprocessCLITransport.write
             SubprocessCLITransport._original_read_messages = SubprocessCLITransport.read_messages
 
         interceptor = self
 
-        # Patch write() to inject memory and capture outgoing messages
-        async def patched_write(self, data: str):
-            # Inject memory on first write (before any messages are sent)
-            if not hasattr(self, '_memory_injected'):
-                config = get_current_config()
-                if config:
-                    await interceptor._inject_memory_async(self._options, config)
-                    self._memory_injected = True
+        # Patch connect() to inject memory BEFORE subprocess starts
+        # This is critical - memory must be injected before _build_command() runs
+        async def patched_connect(self):
+            config = get_current_config()
+            if config and not hasattr(self, '_memory_injected'):
+                await interceptor._inject_memory_async(self._options, config)
+                self._memory_injected = True
 
+            return await SubprocessCLITransport._original_connect(self)
+
+        # Patch write() to capture outgoing messages (memory injection moved to connect)
+        async def patched_write(self, data: str):
             # Capture user message
             config = get_current_config()
             if config:
@@ -77,10 +82,12 @@ class ClaudeInterceptor(BaseInterceptor):
                 return original_iterator
 
         # Apply patches
+        SubprocessCLITransport.connect = patched_connect
         SubprocessCLITransport.write = patched_write
         SubprocessCLITransport.read_messages = patched_read_messages
 
         # Store for uninstall
+        self._original_methods['connect'] = SubprocessCLITransport._original_connect
         self._original_methods['write'] = SubprocessCLITransport._original_write
         self._original_methods['read_messages'] = SubprocessCLITransport._original_read_messages
 
@@ -91,6 +98,8 @@ class ClaudeInterceptor(BaseInterceptor):
         except ImportError:
             return
 
+        if 'connect' in self._original_methods:
+            SubprocessCLITransport.connect = self._original_methods['connect']
         if 'write' in self._original_methods:
             SubprocessCLITransport.write = self._original_methods['write']
         if 'read_messages' in self._original_methods:
@@ -116,8 +125,9 @@ class ClaudeInterceptor(BaseInterceptor):
         """
         Inject memory into Claude Agent options.
 
-        This is called from patched_write() on first write (during client.connect()).
-        Uses the user's client (async or sync) to retrieve memory context.
+        This is called from patched_connect() BEFORE the subprocess starts.
+        Memory must be injected before _build_command() runs, otherwise the
+        system prompt is already baked into the CLI args.
 
         Args:
             options: ClaudeAgentOptions instance
@@ -134,8 +144,13 @@ class ClaudeInterceptor(BaseInterceptor):
             return
 
         try:
-            # Retrieve memory context
-            memory_context = await client.memory.context.retrieve(agent=agent_name)
+            # Retrieve memory context (handle both sync and async clients)
+            import inspect
+            result = client.memory.context.retrieve(agent=agent_name)
+            if inspect.iscoroutine(result):
+                memory_context = await result
+            else:
+                memory_context = result
 
             if not memory_context:
                 return
