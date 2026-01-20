@@ -5,7 +5,7 @@ Provides sleeptime management operations for agents.
 """
 
 from typing import Any, Optional
-from letta_client.types import AgentState, SleeptimeManagerParam
+from letta_client.types import AgentState
 
 
 # =============================================================================
@@ -50,18 +50,21 @@ class SleeptimeClient:
             include=["agent.blocks", "agent.managed_group", "agent.tags"],
         )
     
-    def update(self, agent: str, model: Optional[str], frequency: Optional[int]) -> Optional[AgentState]:
+    def update(self, agent: str, model: Optional[str], frequency: Optional[int] = None) -> Optional[AgentState]:
         """
         Update the sleeptime configuration for the agent.
 
         Args:
             agent (str): Name of the primary agent to update corresponding sleeptime agent for
             model (str | None): Model to use for the sleeptime agent
-            frequency (int | None): Frequency at which to invoke the sleeptime memory agent (num turns)
+            frequency (int | None): Frequency parameter (currently not supported)
 
         Returns:
             (AgentState | None): Updated sleeptime agent if found, None otherwise
         """
+        if frequency is not None:
+            raise NotImplementedError("Sleeptime frequency updates are not currently supported")
+        
         primary_agent = self._parent.agents.retrieve(agent=agent)
         if not primary_agent or not primary_agent.multi_agent_group:
             return None
@@ -69,14 +72,12 @@ class SleeptimeClient:
 
         if model:
             sleeptime_agent = self._letta.agents.update(agent_id=sleeptime_agent_id, model=model)
-        if frequency:
-            self._letta.groups.update(group_id=primary_agent.multi_agent_group.id, manager_config=SleeptimeManagerParam(sleeptime_agent_frequency=frequency))
-            sleeptime_agent = self._letta.agents.retrieve(
-                agent_id=sleeptime_agent_id,
-                include=["agent.blocks", "agent.managed_group", "agent.tags"],
-            )
+            return sleeptime_agent
         
-        return sleeptime_agent
+        return self._letta.agents.retrieve(
+            agent_id=sleeptime_agent_id,
+            include=["agent.blocks", "agent.managed_group", "agent.tags"],
+        )
 
 
 # =============================================================================
@@ -121,18 +122,21 @@ class AsyncSleeptimeClient:
             include=["agent.blocks", "agent.managed_group", "agent.tags"],
         )
     
-    async def update(self, agent: str, model: Optional[str], frequency: Optional[int]) -> Optional[AgentState]:
+    async def update(self, agent: str, model: Optional[str], frequency: Optional[int] = None) -> Optional[AgentState]:
         """
         Update the sleeptime configuration for the agent.
 
         Args:
             agent (str): Name of the primary agent to update corresponding sleeptime agent for
             model (str | None): Model to use for the sleeptime agent
-            frequency (int | None): Frequency at which to invoke the sleeptime memory agent (num turns)
+            frequency (int | None): Frequency parameter (currently not supported)
 
         Returns:
             (AgentState | None): Updated sleeptime agent if found, None otherwise
         """
+        if frequency is not None:
+            raise NotImplementedError("Sleeptime frequency updates are not currently supported")
+        
         primary_agent = await self._parent.agents.retrieve(agent=agent)
         if not primary_agent or not primary_agent.multi_agent_group:
             return None
@@ -140,12 +144,10 @@ class AsyncSleeptimeClient:
 
         if model:
             sleeptime_agent = await self._letta.agents.update(agent_id=sleeptime_agent_id, model=model)
-        if frequency:
-            await self._letta.groups.update(group_id=primary_agent.multi_agent_group.id, manager_config=SleeptimeManagerParam(sleeptime_agent_frequency=frequency))
-            sleeptime_agent = await self._letta.agents.retrieve(
-                agent_id=sleeptime_agent_id,
-                include=["agent.blocks", "agent.managed_group", "agent.tags"],
-            )
+            return sleeptime_agent
         
-        return sleeptime_agent
+        return await self._letta.agents.retrieve(
+            agent_id=sleeptime_agent_id,
+            include=["agent.blocks", "agent.managed_group", "agent.tags"],
+        )
 

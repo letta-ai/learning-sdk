@@ -6,7 +6,7 @@ Provides agent management operations with name-based APIs.
 
 from typing import Any, List, Optional
 
-from letta_client.types import AgentState, SleeptimeManagerParam
+from letta_client.types import AgentState
 from .sleeptime import SleeptimeClient, AsyncSleeptimeClient
 from ..utils import memory_placeholder
 
@@ -60,13 +60,6 @@ class AgentsClient:
             embedding="openai/text-embedding-3-small",
             tags=["agentic-learning-sdk"],
             enable_sleeptime=True,
-        )
-        self._letta.groups.update(
-            group_id=agent.multi_agent_group.id,
-            manager_config=SleeptimeManagerParam(
-                manager_type="sleeptime",
-                sleeptime_agent_frequency=2,
-            ),
         )
         return agent
     
@@ -203,13 +196,6 @@ class AsyncAgentsClient:
             embedding="openai/text-embedding-3-small",
             tags=["agentic-learning-sdk"],
             enable_sleeptime=True,
-        )
-        await self._letta.groups.update(
-            group_id=agent.multi_agent_group.id,
-            manager_config=SleeptimeManagerParam(
-                manager_type="sleeptime",
-                sleeptime_agent_frequency=2,
-            ),
         )
         return agent
     
