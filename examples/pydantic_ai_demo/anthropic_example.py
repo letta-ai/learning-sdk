@@ -32,7 +32,5 @@ def ask_agent(message: str):
 
 # Memory automatically persists across LLM API calls
 ask_agent("My name is Alice.")
-ask_agent("What's my name?")
-sleep-time
-
+time.sleep(8)  # Wait for sleeptime to process
 ask_agent("What's my name?")
